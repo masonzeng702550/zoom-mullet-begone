@@ -25,6 +25,7 @@ from meet_pants.perception.types import PoseFrame
 from meet_pants.render.compositor import Compositor, SceneMasks
 from meet_pants.render.garment import Garment, GarmentError, list_garments, load_garment
 from meet_pants.render.mesh import Mesh, build_mesh
+from meet_pants.render.trim import draw_trim
 from meet_pants.render.warp_cv import render_mesh
 from meet_pants.tracking.one_euro import LandmarkSmoother
 
@@ -94,6 +95,7 @@ def dress(
     layer = render_mesh(mesh, garment.pyramid, frame.shape)
     if layer is None:
         return frame, mesh
+    draw_trim(layer, mesh, garment.trim, geometry.scale)
     return compositor.composite(frame, layer, masks or SceneMasks(), geometry.scale, opacity), mesh
 
 

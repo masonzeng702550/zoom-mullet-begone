@@ -21,6 +21,7 @@ import cv2
 import numpy as np
 import yaml
 
+TRIM_KINDS = ("seam", "edge", "crease", "stitch")
 LEG_ANCHORS = ("waist_out", "crotch_out", "knee_out", "knee_in", "hem_out", "hem_in")
 
 
@@ -39,6 +40,13 @@ class LegAnchors:
 
 
 @dataclass(frozen=True)
+class TrimLine:
+    kind: str  # one of TRIM_KINDS
+    points: np.ndarray  # (N, 2) texture pixels
+    color: tuple[int, int, int] | None = None  # BGR, for stitches
+
+
+@dataclass(frozen=True)
 class Garment:
     id: str
     name: str
@@ -54,6 +62,7 @@ class Garment:
     waist_rows: int  # mesh rows between waist and crotch
     along: int  # mesh rows per thigh / shin
     across: int  # mesh columns across each leg
+    trim: tuple[TrimLine, ...] = ()  # seams etc. drawn as crisp lines on screen
 
 
 MIN_LEVEL_SIZE = 64
@@ -103,7 +112,25 @@ def load_garment(root: Path, garment_id: str) -> Garment:
         waist_rows=int(mesh.get("waist_rows", 3)),
         along=int(mesh.get("along", 8)),
         across=int(mesh.get("across", 4)),
+        trim=_trim(spec, str(spec_path)),
     )
+
+
+def _trim(spec: dict, where: str) -> tuple[TrimLine, ...]:
+    lines = []
+    for i, item in enumerate(spec.get("trim", []) or []):
+        kind = item.get("kind")
+        if kind not in TRIM_KINDS:
+            raise GarmentError(f"{where} trim[{i}]: kind must be one of {', '.join(TRIM_KINDS)}")
+        try:
+            points = np.array(item["points"], dtype=np.float64).reshape(-1, 2)
+        except (KeyError, ValueError):
+            raise GarmentError(f"{where} trim[{i}]: points must be a list of [x, y]") from None
+        if len(points) < 2:
+            raise GarmentError(f"{where} trim[{i}]: needs at least 2 points")
+        color = item.get("color")
+        lines.append(TrimLine(kind, points, tuple(int(c) for c in color) if color else None))
+    return tuple(lines)
 
 
 def list_garments(root: Path) -> list[str]:
