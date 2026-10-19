@@ -7,9 +7,9 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from meet_pants.config import Config, ConfigError, load_config
+from meet_pants.config import MODES, Config, ConfigError, load_config
 
-DEBUG_LAYERS = ("landmarks", "masks", "hud")
+DEBUG_LAYERS = ("landmarks", "masks", "mesh", "hud")
 
 
 def _resolution(text: str) -> list[int]:
@@ -38,6 +38,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--resolution", type=_resolution, help="capture size, e.g. 1280x720")
     parser.add_argument("--fps", type=int, help="capture / virtual camera frame rate")
     parser.add_argument("--model", choices=["full", "lite"], help="pose landmarker model size")
+    parser.add_argument("--mode", choices=MODES, help="always draw pants, or off")
+    parser.add_argument("--garment", help="garment id (folder name under garments/)")
     parser.add_argument("--no-vcam", action="store_true", help="do not open the virtual camera")
     parser.add_argument("--no-preview", action="store_true", help="do not open the preview window")
     parser.add_argument(
@@ -47,6 +49,12 @@ def build_parser() -> argparse.ArgumentParser:
         help=f"preview overlays, comma separated: {','.join(DEBUG_LAYERS)} or none",
     )
     parser.add_argument("--frames", type=int, help="stop after N frames (for testing)")
+    parser.add_argument(
+        "--record",
+        type=Path,
+        metavar="PATH",
+        help="also save the raw camera input to an .mp4 (for reproducing issues; keep it out of git)",
+    )
     return parser
 
 
@@ -60,6 +68,10 @@ def args_to_overrides(args: argparse.Namespace) -> dict[str, Any]:
         overrides["fps"] = args.fps
     if args.model is not None:
         overrides["pose"] = {"model": f"pose_landmarker_{args.model}.task"}
+    if args.mode is not None:
+        overrides["mode"] = args.mode
+    if args.garment is not None:
+        overrides["garment"] = args.garment
     if args.no_vcam:
         overrides["vcam"] = False
     if args.no_preview:
@@ -77,15 +89,12 @@ def main(argv: list[str] | None = None) -> int:
         print(f"config error: {e}", file=sys.stderr)
         return 2
 
-    if not config.pose_model_path.exists():
-        print(
-            f"model not found: {config.pose_model_path}\n"
-            "run: python scripts/download_models.py",
-            file=sys.stderr,
-        )
-        return 2
+    for model in (config.pose_model_path, config.segmenter_model_path):
+        if not model.exists():
+            print(f"model not found: {model}\nrun: python scripts/download_models.py", file=sys.stderr)
+            return 2
 
     # Imported late so --help and config errors don't pay for loading mediapipe.
     from meet_pants.pipeline import run
 
-    return run(config, max_frames=args.frames)
+    return run(config, max_frames=args.frames, record=args.record)

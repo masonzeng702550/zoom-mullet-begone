@@ -2,7 +2,7 @@
 
 Skeleton-tracked virtual pants for video calls. Built on MediaPipe Tasks Vision `PoseLandmarker`; output goes to a virtual camera that Zoom / Meet / Teams can select.
 
-> Status: **M0** — camera capture, virtual camera passthrough, and a skeleton preview. No pants yet.
+> Status: **M1 + most of M2** — virtual pants follow each leg's skeleton (waist, thighs, knees, shins). Their edges follow the detected skin and clothes row by row, so wider or narrower legs stay covered. Lighting, color and camera noise are matched to the scene, edges are feathered, and forearms/hands stay in front. Always on for now; automatic "no pants" detection comes in M3.
 
 ## Setup
 
@@ -31,14 +31,21 @@ Then pick **OBS Virtual Camera** in your meeting app.
 | `--input 1` / `--input clip.mp4` | camera index or video file |
 | `--resolution 1280x720`, `--fps 30` | capture settings |
 | `--model lite` | faster, less accurate pose model |
+| `--mode always` / `--mode off` | draw pants whenever hips are visible, or never |
+| `--garment jeans_indigo` | starting garment (`dress_navy`, `chino_khaki`, `jeans_indigo`) |
 | `--no-vcam` | preview only |
 | `--no-preview` | virtual camera only |
-| `--debug landmarks,masks,hud` | preview overlays (`none` to hide) |
+| `--debug landmarks,masks,mesh,hud` | preview overlays (`none` to hide) |
+| `--record data/clip.mp4` | also save the raw camera input (to reproduce issues; `data/` is gitignored) |
 | `--config path.yaml` | config file (default `~/.config/meet-pants/config.yaml`) |
 
-Preview keys: `D` cycles overlays (skeleton → skeleton + person mask → off), `Esc` or `Q` quits.
+Preview keys: `M` toggles pants on/off, `P` next garment, `D` cycles overlays (skeleton → skeleton + person mask (purple) and skin (orange) → mesh → off), `Esc` or `Q` quits.
 
 The preview is mirrored; the virtual camera is not (meeting apps mirror your self-view themselves). Overlays appear only in the preview.
+
+## Garments
+
+Each folder in `garments/` holds a front-view RGBA `texture.png` and a `garment.yaml` with anchor points (waist, crotch, knee and hem rows per leg). The built-in ones are drawn by `scripts/make_garments.py`; re-run it after changing the layout.
 
 ## Test
 

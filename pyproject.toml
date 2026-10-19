@@ -28,3 +28,4 @@ packages = ["src/meet_pants"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["tests"]

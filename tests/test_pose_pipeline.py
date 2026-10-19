@@ -54,3 +54,4 @@ def test_pipeline_headless(model_path: Path, person_video: Path, capsys: pytest.
     out = capsys.readouterr().out
     assert "done   15 frames" in out
     assert "person detected in 100% of frames" in out
+    assert "pants drawn in 100%" in out

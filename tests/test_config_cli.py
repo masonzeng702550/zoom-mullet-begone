@@ -60,13 +60,13 @@ def test_cli_overrides() -> None:
         "resolution": [640, 360],
         "pose": {"model": "pose_landmarker_lite.task"},
         "vcam": False,
-        "debug": {"landmarks": False, "masks": True, "hud": False},
+        "debug": {"landmarks": False, "masks": True, "mesh": False, "hud": False},
     }
 
 
 def test_cli_debug_none_hides_all() -> None:
     args = cli.build_parser().parse_args(["--debug", "none"])
-    assert cli.args_to_overrides(args)["debug"] == {"landmarks": False, "masks": False, "hud": False}
+    assert cli.args_to_overrides(args)["debug"] == {"landmarks": False, "masks": False, "mesh": False, "hud": False}
 
 
 @pytest.mark.parametrize("argv", [["--resolution", "big"], ["--debug", "skeleton"]])

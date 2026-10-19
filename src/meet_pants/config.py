@@ -11,11 +11,16 @@ import yaml
 DEFAULT_CONFIG_PATH = Path.home() / ".config" / "meet-pants" / "config.yaml"
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_MODELS_DIR = PROJECT_ROOT / "models"
+DEFAULT_GARMENTS_DIR = PROJECT_ROOT / "garments"
+
+# "auto" (draw only when the lower body is inappropriate) arrives with M3.
+MODES = ("always", "off")
 
 
 @dataclass(frozen=True)
 class PoseConfig:
     model: str = "pose_landmarker_full.task"
+    segmenter_model: str = "selfie_multiclass_256x256.tflite"
     min_detection_confidence: float = 0.5
     min_presence_confidence: float = 0.5
     min_tracking_confidence: float = 0.5
@@ -23,9 +28,18 @@ class PoseConfig:
 
 
 @dataclass(frozen=True)
+class SmoothingConfig:
+    # One Euro parameters; landmark speed is measured in pixels per second.
+    min_cutoff: float = 1.0
+    beta: float = 0.05
+    d_cutoff: float = 1.0
+
+
+@dataclass(frozen=True)
 class DebugConfig:
     landmarks: bool = True
     masks: bool = False
+    mesh: bool = False
     hud: bool = True
 
 
@@ -39,13 +53,21 @@ class Config:
     preview_mirror: bool = True
     preview: bool = True
     vcam: bool = True
+    mode: str = "always"
+    garment: str = "dress_navy"
     models_dir: str = str(DEFAULT_MODELS_DIR)
+    garments_dir: str = str(DEFAULT_GARMENTS_DIR)
     pose: PoseConfig = field(default_factory=PoseConfig)
+    smoothing: SmoothingConfig = field(default_factory=SmoothingConfig)
     debug: DebugConfig = field(default_factory=DebugConfig)
 
     @property
     def pose_model_path(self) -> Path:
         return Path(self.models_dir).expanduser() / self.pose.model
+
+    @property
+    def segmenter_model_path(self) -> Path:
+        return Path(self.models_dir).expanduser() / self.pose.segmenter_model
 
 
 class ConfigError(ValueError):
@@ -106,4 +128,6 @@ def load_config(path: Path | None = None, overrides: dict[str, Any] | None = Non
         config = _merge(config, data)
     if overrides:
         config = _merge(config, overrides)
+    if config.mode not in MODES:
+        raise ConfigError(f"mode must be one of {', '.join(MODES)}, got {config.mode!r}")
     return config
