@@ -8,6 +8,8 @@ thickness suited to the on-screen size.
 
 from __future__ import annotations
 
+from dataclasses import dataclass
+
 import cv2
 import numpy as np
 
@@ -30,11 +32,21 @@ def resample(points: np.ndarray, step: float = RESAMPLE) -> np.ndarray:
     return np.array(out)
 
 
-def map_points(mesh: Mesh, points: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-    """Map texture points to the frame through the mesh triangle containing them.
+@dataclass(frozen=True)
+class Binding:
+    """Where each texture point sits in the mesh: triangle index and barycentric weights."""
 
-    Returns (mapped (N, 2), found (N,) bool); points outside the mesh are not found.
-    """
+    triangle: np.ndarray  # (N,) int
+    weights: np.ndarray  # (N, 3)
+    found: np.ndarray  # (N,) bool
+
+    def apply(self, mesh: Mesh) -> np.ndarray:
+        tri_dst = mesh.dst[mesh.triangles][self.triangle].astype(np.float64)  # (N, 3, 2)
+        return (self.weights[..., None] * tri_dst).sum(axis=1)
+
+
+def bind_points(mesh: Mesh, points: np.ndarray) -> Binding:
+    """Find the triangle containing each texture point and its barycentric weights."""
     tri_src = mesh.src[mesh.triangles].astype(np.float64)  # (T, 3, 2)
     origin = tri_src[:, 0]
     v0, v1 = tri_src[:, 1] - origin, tri_src[:, 2] - origin
@@ -53,11 +65,42 @@ def map_points(mesh: Mesh, points: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     found = inside.any(axis=1)
     k = inside.argmax(axis=1)
     rows = np.arange(len(points))
-    tri_dst = mesh.dst[mesh.triangles][k].astype(np.float64)  # (N, 3, 2)
-    mapped = (
-        u[rows, k][:, None] * tri_dst[:, 0] + v[rows, k][:, None] * tri_dst[:, 1] + w[rows, k][:, None] * tri_dst[:, 2]
-    )
-    return mapped, found
+    weights = np.stack([u[rows, k], v[rows, k], w[rows, k]], axis=1)
+    return Binding(k, weights, found)
+
+
+def map_points(mesh: Mesh, points: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    """Map texture points to the frame through the mesh triangle containing them.
+
+    Returns (mapped (N, 2), found (N,) bool); points outside the mesh are not found.
+    """
+    binding = bind_points(mesh, points)
+    return binding.apply(mesh), binding.found
+
+
+@dataclass(frozen=True)
+class BoundTrim:
+    lines: tuple[TrimLine, ...]
+    binding: Binding  # all lines' resampled points, concatenated
+    splits: np.ndarray  # start index of each line in the concatenation
+
+
+# A garment's texture-side mesh is the same every frame (it depends only on
+# the garment anchors), so trim bindings are computed once and reused.
+_bindings: dict[tuple[int, bytes], BoundTrim] = {}
+
+
+def bind_trim(mesh: Mesh, lines: tuple[TrimLine, ...]) -> BoundTrim:
+    key = (id(lines), mesh.src.tobytes() + mesh.triangles.tobytes())
+    bound = _bindings.get(key)
+    if bound is None or bound.lines is not lines:  # `is` guards against a reused id()
+        pieces = [resample(line.points) for line in lines]
+        splits = np.cumsum([0] + [len(p) for p in pieces])
+        bound = BoundTrim(lines, bind_points(mesh, np.concatenate(pieces)), splits)
+        if len(_bindings) > 32:
+            _bindings.clear()
+        _bindings[key] = bound
+    return bound
 
 
 def _runs(mapped: np.ndarray, found: np.ndarray) -> list[np.ndarray]:
@@ -106,9 +149,11 @@ def draw_trim(layer: Layer, mesh: Mesh, lines: tuple[TrimLine, ...], scale: floa
     def poly(run: np.ndarray) -> np.ndarray:
         return np.round((run - origin) * (1 << SHIFT)).astype(np.int32).reshape(-1, 1, 2)
 
-    for line in lines:
-        mapped, found = map_points(mesh, resample(line.points))
-        for run in _runs(mapped, found):
+    bound = bind_trim(mesh, lines)
+    mapped_all = bound.binding.apply(mesh)
+    for i, line in enumerate(lines):
+        a, b = bound.splits[i], bound.splits[i + 1]
+        for run in _runs(mapped_all[a:b], bound.binding.found[a:b]):
             if line.kind == "seam":
                 # a sewn seam: shallow groove with lit shoulders on both sides
                 cv2.polylines(light, [poly(run)], False, 0.5, width + 2, cv2.LINE_AA, SHIFT)
