@@ -58,6 +58,34 @@ def test_unseen_shoulders_are_placed_above_the_hips() -> None:
     assert landmarks[Lm.LEFT_WRIST].to_px(400, 500) == tuple(ls)
 
 
+def test_knees_pinned_to_the_frame_edge_are_extended_off_screen() -> None:
+    """Standing close: the frame ends mid-thigh and the model pins the knees to the
+    bottom edge. A 130 px thigh for hips 80 px apart would squash the pants."""
+    points, scores = halpe_standing()
+    w, h = 400, 335  # bottom edge just below the knees at y=330
+    scores[13:17] = 0.4
+    scores[20:26] = 0.2
+    landmarks = to_mediapipe(points, scores, w, h)
+    knee = np.array(landmarks[Lm.LEFT_KNEE].to_px(w, h))
+    ankle = np.array(landmarks[Lm.LEFT_ANKLE].to_px(w, h))
+    heel = np.array(landmarks[Lm.LEFT_HEEL].to_px(w, h))
+    assert knee[1] > h  # off-screen, like MediaPipe's extrapolated landmarks
+    assert knee[1] - 200 == pytest.approx(2.0 * 80, abs=2)  # thigh from hip width
+    assert abs(knee[0] - 260) <= 1  # along the visible thigh: straight down
+    assert ankle[1] > knee[1] + 100 and abs(ankle[0] - 260) <= 1
+    np.testing.assert_allclose(heel - ankle, [255 - 260, 470 - 460], atol=1)  # foot moves with the ankle
+    assert landmarks[Lm.LEFT_KNEE].visibility == pytest.approx(0.4)
+
+
+def test_seen_short_thighs_are_kept() -> None:
+    """Knees clearly in view stay put even when foreshortened (sitting, knees toward the camera)."""
+    points, scores = halpe_standing()
+    points[13], points[14] = (262, 250), (178, 250)  # 50 px thighs
+    landmarks = to_mediapipe(points, scores, 400, 500)
+    assert landmarks[Lm.LEFT_KNEE].to_px(400, 500) == (262, 250)
+    assert landmarks[Lm.LEFT_ANKLE].to_px(400, 500) == (260, 460)
+
+
 class FakeDetector:
     def __init__(self, frames: list[PoseFrame | None]):
         self.frames = frames

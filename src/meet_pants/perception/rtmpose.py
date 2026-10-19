@@ -34,6 +34,13 @@ DETECTOR_SCORE = 0.3
 DETECT_EVERY = 10  # frames between person-detector runs; in between the box follows the keypoints
 SHOULDER_SCORE = 0.5  # below this the shoulders are estimated from the hips
 ARM_SCORE = 0.3  # below this an elbow / wrist is moved to its shoulder
+# A knee or ankle below this score, or within EDGE_FRAC of the frame border,
+# is taken as out of view: the model pins such points at the edge of its crop,
+# which makes the leg look far too short. They are extended off-screen instead.
+LEG_SCORE = 0.5
+EDGE_FRAC = 0.02
+THIGH_PER_HIP = 2.0  # thigh length relative to the hip keypoint distance
+SHIN_PER_THIGH = 0.95
 ONNX_THREADS = 2  # 1 thread: less CPU but ~18 ms per frame, too slow next to MediaPipe at 30 fps
 
 # Halpe-26 index -> MediaPipe indices it fills.
@@ -167,9 +174,56 @@ def _estimate_shoulders(points: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     return hip_l + torso * up, hip_r + torso * up
 
 
+def _unit(v: np.ndarray, fallback: np.ndarray) -> np.ndarray:
+    norm = float(np.hypot(*v))
+    return v / norm if norm > 1e-6 else fallback
+
+
+def _extend_legs(points: np.ndarray, scores: np.ndarray, width: int, height: int) -> None:
+    """Move out-of-view knees / ankles (and the feet with them) to a plausible place off-screen,
+    along the visible part of the leg, the way MediaPipe extrapolates hidden landmarks."""
+    margin = EDGE_FRAC * height
+
+    def unsure(i: int) -> bool:
+        x, y = points[i]
+        at_edge = x < margin or x > width - 1 - margin or y < margin or y > height - 1 - margin
+        return scores[i] < LEG_SCORE or at_edge
+
+    hip_l, hip_r = points[11], points[12]
+    across = hip_r - hip_l
+    hip_width = float(np.hypot(*across))
+    down = _unit(np.array([-across[1], across[0]]), np.array([0.0, 1.0]))
+    if np.dot(down, (points[13] + points[14]) / 2 - (hip_l + hip_r) / 2) < 0:
+        down = -down
+    thigh_min = THIGH_PER_HIP * hip_width
+
+    for hip, knee, ankle, feet in ((11, 13, 15, (20, 24)), (12, 14, 16, (21, 25))):
+        old_ankle = points[ankle].copy()
+        thigh = points[knee] - points[hip]
+        thigh_len = float(np.hypot(*thigh))
+        knee_moved = False
+        if unsure(knee) and thigh_len < thigh_min:
+            # the clipped knee still shows which way the thigh goes, unless it is too close to tell
+            direction = _unit(thigh, down) if thigh_len > 0.3 * hip_width else down
+            points[knee] = points[hip] + direction * thigh_min
+            thigh_len, knee_moved = thigh_min, True
+        shin = points[ankle] - points[knee]
+        shin_min = SHIN_PER_THIGH * thigh_len
+        if knee_moved or (unsure(ankle) and float(np.hypot(*shin)) < shin_min):
+            # straight leg: continue the thigh unless the ankle was seen beyond the knee
+            direction = _unit(points[knee] - points[hip], down)
+            if not knee_moved and not unsure(knee) and float(np.hypot(*shin)) > 0.3 * thigh_len:
+                direction = _unit(shin, direction)
+            points[ankle] = points[knee] + direction * max(shin_min, float(np.hypot(*shin)) if not knee_moved else 0)
+        moved = points[ankle] - old_ankle
+        for foot in feet:
+            points[foot] = points[foot] + moved
+
+
 def to_mediapipe(points: np.ndarray, scores: np.ndarray, width: int, height: int) -> tuple[Landmark, ...]:
     """Halpe-26 pixel keypoints -> 33 normalized MediaPipe landmarks (visibility = score)."""
     points = points.astype(np.float64).copy()
+    _extend_legs(points, scores, width, height)
     if min(scores[5], scores[6]) < SHOULDER_SCORE:
         points[5], points[6] = _estimate_shoulders(points)
     for joint, shoulder in ((7, 5), (9, 5), (8, 6), (10, 6)):
