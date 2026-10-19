@@ -163,3 +163,25 @@ def test_width_is_smoothed_over_time() -> None:
     tracker.update(make_pose(pts, W, H, legs_mask(W, H, [180, 260], 22, 230, 480)), W, H)
     geo = tracker.update(make_pose(pts, W, H, legs_mask(W, H, [180, 260], 30, 230, 480)), W, H)
     assert 22 < geo.left.shin_half < 30
+
+
+def test_crotch_scan_that_never_leaves_the_body_is_deep() -> None:
+    mask = np.ones((300, 100), np.float32)  # legs together: no gap below the hips
+    assert scan_crotch_depth(mask, np.array([50.0, 100.0]), np.array([0.0, 1.0]), 80) == 80
+    # running off the bottom of the frame while still on the body is the same
+    assert scan_crotch_depth(mask, np.array([50.0, 250.0]), np.array([0.0, 1.0]), 80) == 80
+
+
+def test_touching_legs_meet_at_the_midline() -> None:
+    """Thighs pressed together: each leg must reach the midline, leaving no strip of skin."""
+    pts = standing_points(left_x=250, right_x=190)  # centerlines 60 px apart
+    mask = np.zeros((H, W), np.float32)
+    mask[150:480, 190 - 40 : 250 + 40] = 1.0  # one solid block: no gap between the thighs
+    geo = LegTracker().update(make_pose(pts, W, H, mask), W, H)
+    for leg in (geo.left, geo.right):
+        half, shift = leg.thigh.at(0.5)
+        center = leg.crotch[0] + 0.5 * (leg.knee[0] - leg.crotch[0])
+        # outward normal is -x for the screen-left leg, +x for the right one
+        inner = center + (1 if leg.screen_left else -1) * (half - shift)
+        # inner edge reaches x=220 (the midline) from either side
+        assert abs(inner - 220) <= 2, (leg.screen_left, inner)

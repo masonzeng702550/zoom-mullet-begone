@@ -32,9 +32,13 @@ PROFILE_SAMPLES = 9  # width samples along each thigh and shin
 PROFILE_T = np.linspace(0.04, 0.96, PROFILE_SAMPLES)
 WIDTH_CLAMP = (0.5, 2.2)  # measured width relative to the skeleton-based prior
 WIDTH_EMA = 0.35
-# Inward scan this many times longer than the outward one means the legs touch
-# and the scan ran into the other leg.
+# Without the other leg to compare against: an inward scan this many times
+# longer than the outward one means the legs touch and the scan ran into the
+# other leg.
 MERGED_RATIO = 2.5
+# Legs closer to side by side than this (|cos| between the scan normal and the
+# line to the other leg) get a midline limit on their inward scan.
+MIDLINE_MIN_COS = 0.3
 ARM_THICKNESS = 0.45  # forearm/hand cut-out thickness relative to the hip-width base
 
 
@@ -125,16 +129,43 @@ class LegGeometry:
     arms: np.ndarray | None = None
 
 
+def midline_limit(
+    a: np.ndarray, b: np.ndarray, other_a: np.ndarray, other_b: np.ndarray, normal: np.ndarray, ts: np.ndarray = PROFILE_T
+) -> np.ndarray:
+    """Distance inward (along -normal) from each sample on a->b to the midline between
+    this leg and the other one (sampled at the same t on other_a->other_b). inf where
+    the legs are not side by side."""
+    p = a + ts[:, None] * (b - a)
+    q = other_a + ts[:, None] * (other_b - other_a)
+    gap = q - p
+    dist = np.hypot(gap[:, 0], gap[:, 1])
+    cos = -(gap @ normal) / np.maximum(dist, 1e-6)  # inward normal vs direction to the other leg
+    with np.errstate(divide="ignore"):
+        limit = np.where(cos > MIDLINE_MIN_COS, dist / 2 / np.maximum(cos, 1e-6), np.inf)
+    return np.maximum(limit, 1.0)
+
+
 def scan_profile(
-    mask: np.ndarray, a: np.ndarray, b: np.ndarray, normal: np.ndarray, max_r: int, ts: np.ndarray = PROFILE_T
+    mask: np.ndarray,
+    a: np.ndarray,
+    b: np.ndarray,
+    normal: np.ndarray,
+    max_r: int,
+    ts: np.ndarray = PROFILE_T,
+    inner_limit: np.ndarray | None = None,
 ) -> tuple[np.ndarray, np.ndarray]:
     """Half width and center shift of the mask region across segment a->b at each t.
 
     Scans from each point outward (along `normal`) and inward until leaving
     the mask. The shift is how far the region's center lies from the segment,
-    positive toward `normal`. When the inward scan runs much further than the
-    outward one, the legs are touching; then only the outward distance is
-    trusted and the shift is 0. Points off the frame or off the mask are NaN.
+    positive toward `normal`. Points off the frame or off the mask are NaN.
+
+    `inner_limit` is the distance to the midline between the legs. Where the
+    inward scan is still on the body there, the legs touch (or the crotch is
+    in between): the leg then reaches the midline, so the two legs meet and
+    nothing between them is left uncovered. Where there is no limit (inf), an
+    inward scan much longer than the outward one is taken as touching legs and
+    only the outward distance is trusted.
     """
     h, w = mask.shape
     centers = a + ts[:, None] * (b - a)  # (K, 2)
@@ -157,7 +188,10 @@ def scan_profile(
         return np.where(outside.any(axis=1), outside.argmax(axis=1), max_r).astype(float)
 
     d_out, d_in = distance(1.0), distance(-1.0)
-    merged = d_in > MERGED_RATIO * d_out
+    limited = np.zeros(len(ts), bool) if inner_limit is None else np.isfinite(inner_limit)
+    if inner_limit is not None:
+        d_in = np.where(limited, np.minimum(d_in, inner_limit), d_in)
+    merged = ~limited & (d_in > MERGED_RATIO * d_out)
     half = np.where(merged, d_out, (d_out + d_in) / 2)
     shift = np.where(merged, 0.0, (d_out - d_in) / 2)
     half[~usable] = np.nan
@@ -167,7 +201,8 @@ def scan_profile(
 
 def scan_crotch_depth(mask: np.ndarray, start: np.ndarray, direction: np.ndarray, max_r: int) -> float | None:
     """Distance from `start` along `direction` until the mask ends (the gap between
-    the legs), or None if the start is off the body or the scan never leaves it."""
+    the legs), or None if the start is off the body. If the scan never leaves the
+    body (legs together, or sitting), the crotch is at least `max_r` deep."""
     h, w = mask.shape
     pts = start + np.arange(max_r + 1)[:, None] * direction
     xs = np.round(pts[:, 0]).astype(int)
@@ -177,9 +212,11 @@ def scan_crotch_depth(mask: np.ndarray, start: np.ndarray, direction: np.ndarray
         return None
     inside = np.zeros(len(pts), dtype=bool)
     inside[valid] = mask[ys[valid], xs[valid]] > 0
-    if not inside[0] or inside.all():
+    if not inside[0]:
         return None
-    return float(np.argmin(inside))
+    if inside[valid].all():
+        return float(max_r)
+    return float(np.argmin(inside | ~valid))
 
 
 def arm_mask(pose: PoseFrame, width: int, height: int, base: float) -> np.ndarray:
@@ -277,19 +314,25 @@ class LegTracker:
             arms = body & arm_region
             mask = body & (1 - arm_region)
 
+        crotches = [hip + CROTCH_DROP * (knee - hip) for hip, knee, _, _ in sides]
         legs = []
-        for key, (hip, knee, ankle, shoulder), other_hip in (
+        for i, (key, (hip, knee, ankle, shoulder), other_hip) in enumerate((
             ("left", sides[0], hip_r),
             ("right", sides[1], hip_l),
-        ):
+        )):
             outward = unit(hip - other_hip)
-            crotch = hip + CROTCH_DROP * (knee - hip)
+            crotch = crotches[i]
             hem = ankle + HEM_EXTEND * (ankle - knee)
             screen_left = key == "left"
             thigh_m = shin_m = None
             if mask is not None:
-                thigh_m = scan_profile(mask, crotch, knee, outward_normal(knee - crotch, screen_left), max_r)
-                shin_m = scan_profile(mask, knee, ankle, outward_normal(hem - knee, screen_left), max_r)
+                other = sides[1 - i]
+                thigh_n = outward_normal(knee - crotch, screen_left)
+                shin_n = outward_normal(hem - knee, screen_left)
+                thigh_limit = midline_limit(crotch, knee, crotches[1 - i], other[1], thigh_n)
+                shin_limit = midline_limit(knee, ankle, other[1], other[2], shin_n)
+                thigh_m = scan_profile(mask, crotch, knee, thigh_n, max_r, inner_limit=thigh_limit)
+                shin_m = scan_profile(mask, knee, ankle, shin_n, max_r, inner_limit=shin_limit)
             legs.append(
                 Leg(
                     hip=hip,
