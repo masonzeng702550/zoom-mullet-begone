@@ -69,6 +69,21 @@ def coverage_and_u() -> tuple[np.ndarray, np.ndarray]:
     return alpha * vertical, u
 
 
+def form_shading(u: np.ndarray, y: np.ndarray, x: np.ndarray) -> np.ndarray:
+    """Baked volume: each leg is a cylinder lit from the front (bright down the
+    middle, falling off toward the sides); above the crotch the hips are one
+    wider cylinder. Plus ambient occlusion on the inner thighs and crotch."""
+    outer, _ = leg_edges(y)
+    u_hips = np.clip((x - outer) / np.maximum(W - 2 * outer, 1), 0, 1)
+    to_legs = np.clip((y - (ROWS_Y[1] - 80)) / 140, 0, 1)  # hips -> separate legs
+    across = (1 - to_legs) * u_hips + to_legs * u
+    shade = 0.66 + 0.34 * np.sin(np.pi * across) ** 0.5
+    thigh_zone = np.exp(-((y - ROWS_Y[1] - 160) / 260) ** 2) * to_legs
+    shade *= 1 - 0.18 * np.exp(-((1 - u) / 0.14) ** 2) * thigh_zone
+    shade *= 1 - 0.25 * np.exp(-((x - MID) ** 2 + (y - ROWS_Y[1]) ** 2) / 90**2)
+    return shade
+
+
 def blurred_noise(rng: np.random.Generator, sigma: float) -> np.ndarray:
     n = cv2.GaussianBlur(rng.standard_normal((H, W)), (0, 0), sigma)
     return n / (np.abs(n).max() + 1e-9)
@@ -203,8 +218,7 @@ def make(style: Style, out_dir: Path) -> None:
     img += (style.mottle * blurred_noise(rng, 30))[..., None]
     img += (1.5 * rng.standard_normal((H, W)))[..., None]
     img += (style.twill * np.sin(2 * np.pi * (x + y) / 5.0))[..., None]
-    # baked roundness: legs a little darker toward both edges
-    img *= (0.84 + 0.16 * np.sin(np.pi * u) ** 0.6)[..., None]
+    img *= form_shading(u, y, x)[..., None]
 
     if style.stitch_bgr is not None:  # jeans fade lighter down the front of the thighs
         fade = np.exp(-((u - 0.45) / 0.22) ** 2) * np.exp(-((y - 700) / 350) ** 2)

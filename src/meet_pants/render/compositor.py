@@ -19,6 +19,10 @@ from meet_pants.render.warp_cv import Layer
 
 LIGHT_GAMMA = 0.6  # how strongly local skin brightness modulates the garment
 LIGHT_RANGE = (0.6, 1.35)
+# Scale (relative to body size) at which skin lighting is sampled: small enough
+# to carry the leg's own form shading onto the fabric, large enough to ignore
+# skin texture and hair.
+LIGHT_SIGMA = 0.25
 EXPOSURE_RANGE = (0.85, 1.1)
 WHITE_BALANCE_RANGE = (0.95, 1.05)
 MID_GRAY = 0.45
@@ -144,7 +148,7 @@ class Compositor:
         if (weight is None or not weight.any()) and masks.body is not None:
             weight = masks.body[y0:y1, x0:x1] > 0
         if weight is not None:
-            light = local_light(gray, weight, sigma=0.6 * scale)
+            light = local_light(gray, weight, sigma=LIGHT_SIGMA * scale)
             covered = alpha > 0.5
             if light is not None and covered.any():
                 ref = float(light[covered].mean())
