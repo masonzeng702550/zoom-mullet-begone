@@ -187,7 +187,8 @@ def run(config: Config, max_frames: int | None = None, record: Path | None = Non
 
                 if recorder is not None:
                     recorder.write(frame.image)
-                segmenter.submit(frame.image, frame.t_ms)  # runs while the pose model works
+                if frames % max(1, config.pose.segment_every) == 0:
+                    segmenter.submit(frame.image, frame.t_ms)  # runs while the pose model works
                 pose = smoother(detector.detect(frame.image, frame.t_ms), width, height)
                 segmentation = segmenter.latest()
                 geometry = legs.update(pose, width, height, segmentation)

@@ -34,6 +34,7 @@ DETECTOR_SCORE = 0.3
 DETECT_EVERY = 10  # frames between person-detector runs; in between the box follows the keypoints
 SHOULDER_SCORE = 0.5  # below this the shoulders are estimated from the hips
 ARM_SCORE = 0.3  # below this an elbow / wrist is moved to its shoulder
+ONNX_THREADS = 2  # 1 thread: less CPU but ~18 ms per frame, too slow next to MediaPipe at 30 fps
 
 # Halpe-26 index -> MediaPipe indices it fills.
 HALPE_TO_MP: dict[int, tuple[int, ...]] = {
@@ -64,6 +65,12 @@ HALPE_TO_MP: dict[int, tuple[int, ...]] = {
 def _session(path: Path) -> ort.InferenceSession:
     options = ort.SessionOptions()
     options.log_severity_level = 3
+    # By default onnxruntime uses every core and keeps its threads spinning
+    # between runs: ~80 ms of CPU for an 11 ms inference. Two threads that
+    # sleep when idle cost about as much CPU as the inference takes.
+    options.intra_op_num_threads = ONNX_THREADS
+    options.inter_op_num_threads = 1
+    options.add_session_config_entry("session.intra_op.allow_spinning", "0")
     return ort.InferenceSession(str(path), options, providers=["CPUExecutionProvider"])
 
 

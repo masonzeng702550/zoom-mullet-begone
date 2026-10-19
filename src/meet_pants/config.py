@@ -25,6 +25,9 @@ class PoseConfig:
     min_presence_confidence: float = 0.5
     min_tracking_confidence: float = 0.5
     segmentation_mask: bool = True
+    # Run the skin/clothes segmenter on every Nth frame (its mask is reused in
+    # between). It is the most expensive model; legs barely move in 1/15 s.
+    segment_every: int = 2
     # RTMPose fallback for frames where MediaPipe cannot see the hips (person
     # too close, head and chest out of frame).
     fallback: bool = True
