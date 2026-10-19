@@ -1,0 +1,17 @@
+# Planning docs stay local
+docs/
+
+# Models and private test footage
+models/
+data/
+
+# Recordings
+*.avi
+*.mp4
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+*.egg-info/
+.DS_Store
