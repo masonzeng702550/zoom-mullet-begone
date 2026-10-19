@@ -126,10 +126,14 @@ class Compositor:
         region = frame[y0:y1, x0:x1].astype(np.float32)
 
         rgba = layer.rgba.astype(np.float32)
-        alpha = rgba[..., 3] / 255.0
-        premult = rgba[..., :3] * alpha[..., None]
-        alpha = _blur(alpha, feather)
-        rgb = _blur(premult, feather) / np.maximum(alpha, 1e-3)[..., None]
+        sharp_alpha = rgba[..., 3] / 255.0
+        rgb = rgba[..., :3]
+        # Feather only the silhouette. Pixels outside the garment get their color
+        # from the blurred premultiplied image (no dark fringe); the interior keeps
+        # the sharp texture so seams and folds survive.
+        alpha = _blur(sharp_alpha, feather)
+        spread = _blur(rgb * sharp_alpha[..., None], feather) / np.maximum(alpha, 1e-3)[..., None]
+        rgb = np.where((sharp_alpha > 0.5)[..., None], rgb, spread)
 
         gray = cv2.cvtColor(region.astype(np.uint8), cv2.COLOR_BGR2GRAY).astype(np.float32) / 255
 

@@ -194,3 +194,13 @@ def test_pyramid_level_matches_screen_size(garment) -> None:
     small = Mesh(dst=full / 5, src=full, triangles=np.array([[0, 1, 2]], np.int32))
     assert pick_level(big, len(garment.pyramid)) == 0
     assert pick_level(small, len(garment.pyramid)) == 2  # 5x smaller: level 2 (4x) is the closest larger one
+
+
+def test_composite_keeps_interior_detail_sharp() -> None:
+    """Edge feathering must not blur seams and folds inside the garment."""
+    layer = _square_layer(size=40, color=200)
+    layer.rgba[:, 20, :3] = 40  # a 1 px dark seam down the middle
+    frame = np.full((100, 100, 3), 120, np.uint8)
+    out = Compositor().composite(frame, layer, SceneMasks(), scale=100)
+    seam, beside = int(out[50, 50, 0]), int(out[50, 52, 0])
+    assert beside - seam > 100
