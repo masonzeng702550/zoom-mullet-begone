@@ -9,6 +9,7 @@ dependencies = [
     # as well, the two packages overwrite each other's cv2 module.
     "mediapipe>=1.1",
     "numpy>=2.0",
+    "onnxruntime>=1.18",  # RTMPose fallback; rtmlib itself is not used (it pulls in opencv-python)
     "pyvirtualcam>=0.15",
     "pyyaml>=6.0",
 ]

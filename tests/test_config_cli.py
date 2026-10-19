@@ -80,3 +80,11 @@ def test_cli_reports_missing_model(tmp_path: Path, capsys: pytest.CaptureFixture
     path.write_text(f"models_dir: {tmp_path}\n")
     assert cli.main(["--config", str(path), "--no-vcam", "--no-preview"]) == 2
     assert "download_models.py" in capsys.readouterr().err
+
+
+def test_explicit_garment_turns_off_auto_matching() -> None:
+    parse = cli.build_parser().parse_args
+    assert cli.args_to_overrides(parse(["--garment", "jeans_indigo"]))["garment_auto"] is False
+    assert cli.args_to_overrides(parse(["--garment", "jeans_indigo", "--auto-garment"]))["garment_auto"] is True
+    assert cli.args_to_overrides(parse(["--no-auto-garment"]))["garment_auto"] is False
+    assert "garment_auto" not in cli.args_to_overrides(parse([]))

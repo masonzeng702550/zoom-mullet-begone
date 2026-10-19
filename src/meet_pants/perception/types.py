@@ -60,6 +60,7 @@ class PoseFrame:
     landmarks: tuple[Landmark, ...] | None  # 33 points, None when nobody is detected
     person_mask: np.ndarray | None  # float32 H x W in [0, 1]
     inference_ms: float
+    source: str = "mediapipe"  # which pose backend produced the landmarks (or "hold")
 
     @property
     def detected(self) -> bool:
@@ -67,3 +68,6 @@ class PoseFrame:
 
     def visibility(self, index: int) -> float:
         return self.landmarks[index].visibility if self.landmarks else 0.0
+
+    def has_hips(self, threshold: float = 0.5) -> bool:
+        return min(self.visibility(Lm.LEFT_HIP), self.visibility(Lm.RIGHT_HIP)) >= threshold

@@ -25,6 +25,12 @@ class PoseConfig:
     min_presence_confidence: float = 0.5
     min_tracking_confidence: float = 0.5
     segmentation_mask: bool = True
+    # RTMPose fallback for frames where MediaPipe cannot see the hips (person
+    # too close, head and chest out of frame).
+    fallback: bool = True
+    fallback_detector: str = "yolox_tiny_humanart.onnx"
+    fallback_model: str = "rtmpose_s_halpe26.onnx"
+    hold_ms: int = 300  # keep the last pose this long when both detectors miss
 
 
 @dataclass(frozen=True)
@@ -55,6 +61,8 @@ class Config:
     vcam: bool = True
     mode: str = "always"
     garment: str = "dress_navy"
+    # Pick the pants that go with the shirt color (P in the preview turns it off).
+    garment_auto: bool = True
     models_dir: str = str(DEFAULT_MODELS_DIR)
     garments_dir: str = str(DEFAULT_GARMENTS_DIR)
     pose: PoseConfig = field(default_factory=PoseConfig)
@@ -64,6 +72,10 @@ class Config:
     @property
     def pose_model_path(self) -> Path:
         return Path(self.models_dir).expanduser() / self.pose.model
+
+    @property
+    def models_path(self) -> Path:
+        return Path(self.models_dir).expanduser()
 
     @property
     def segmenter_model_path(self) -> Path:

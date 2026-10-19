@@ -39,7 +39,14 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--fps", type=int, help="capture / virtual camera frame rate")
     parser.add_argument("--model", choices=["full", "lite"], help="pose landmarker model size")
     parser.add_argument("--mode", choices=MODES, help="always draw pants, or off")
-    parser.add_argument("--garment", help="garment id (folder name under garments/)")
+    parser.add_argument(
+        "--garment", help="garment id (folder name under garments/); turns off --auto-garment unless given"
+    )
+    parser.add_argument(
+        "--auto-garment",
+        action=argparse.BooleanOptionalAction,
+        help="pick the pants that go with the shirt color (default on)",
+    )
     parser.add_argument("--no-vcam", action="store_true", help="do not open the virtual camera")
     parser.add_argument("--no-preview", action="store_true", help="do not open the preview window")
     parser.add_argument(
@@ -72,6 +79,9 @@ def args_to_overrides(args: argparse.Namespace) -> dict[str, Any]:
         overrides["mode"] = args.mode
     if args.garment is not None:
         overrides["garment"] = args.garment
+        overrides["garment_auto"] = False
+    if args.auto_garment is not None:
+        overrides["garment_auto"] = args.auto_garment
     if args.no_vcam:
         overrides["vcam"] = False
     if args.no_preview:

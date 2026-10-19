@@ -15,11 +15,12 @@ import cv2
 import numpy as np
 
 from meet_pants.analysis.leg_geometry import LegGeometry, LegTracker
+from meet_pants.analysis.outfit import OutfitMatcher, sample_top_color, texture_color
 from meet_pants.config import MODES, Config, DebugConfig
 from meet_pants.io.capture import CaptureError, open_source
 from meet_pants.io.preview import KEY_ESC, PreviewWindow, Stats, render_preview
 from meet_pants.io.virtualcam import VirtualCam, VirtualCamError
-from meet_pants.perception.pose import PoseDetector
+from meet_pants.perception.chain import PoseChain
 from meet_pants.perception.segmenter import BodySegmenter, Segmentation
 from meet_pants.perception.types import PoseFrame
 from meet_pants.render.compositor import Compositor, SceneMasks
@@ -30,6 +31,7 @@ from meet_pants.render.warp_cv import render_mesh
 from meet_pants.tracking.one_euro import LandmarkSmoother
 
 FADE_IN_MS = 120
+TOP_SAMPLE_EVERY = 5  # frames between shirt color samples
 
 # D cycles the preview overlays through these presets.
 DEBUG_PRESETS = (
@@ -71,6 +73,19 @@ class Wardrobe:
         self._index = (self._index + 1) % len(self.ids)
         return self.current
 
+    def select(self, garment_id: str) -> Garment:
+        self._index = self.ids.index(garment_id)
+        return self.current
+
+    def colors(self) -> dict[str, np.ndarray]:
+        """Median Lab color of every garment (loads them all)."""
+        colors = {}
+        for gid in self.ids:
+            if gid not in self._cache:
+                self._cache[gid] = load_garment(self._root, gid)
+            colors[gid] = texture_color(self._cache[gid].texture)
+        return colors
+
 
 def scene_masks(pose: PoseFrame, segmentation: Segmentation | None, geometry: LegGeometry) -> SceneMasks:
     return SceneMasks(
@@ -103,7 +118,8 @@ def run(config: Config, max_frames: int | None = None, record: Path | None = Non
     try:
         wardrobe = Wardrobe(Path(config.garments_dir), config.garment)
         wardrobe.current  # fail on a broken garment before opening devices
-    except GarmentError as e:
+        matcher = OutfitMatcher(wardrobe.colors(), config.garment) if config.garment_auto else None
+    except (GarmentError, ValueError) as e:
         print(f"garment error: {e}", file=sys.stderr)
         return 1
 
@@ -116,7 +132,7 @@ def run(config: Config, max_frames: int | None = None, record: Path | None = Non
         width, height = source.size
         print(f"input  {config.input}  {width}x{height} @ {source.fps:.0f} fps")
 
-        detector = stack.enter_context(PoseDetector(config.pose_model_path, config.pose))
+        detector = stack.enter_context(PoseChain.create(config.pose_model_path, config.models_path, config.pose))
         segmenter = stack.enter_context(BodySegmenter(config.segmenter_model_path))
         smoother = LandmarkSmoother(config.smoothing)
         legs = LegTracker()
@@ -146,12 +162,14 @@ def run(config: Config, max_frames: int | None = None, record: Path | None = Non
         if config.preview:
             preview = PreviewWindow()
             stack.callback(preview.close)
-            print("preview: Esc/Q quit, M mode, P next garment, D cycle debug overlays")
+            print("preview: Esc/Q quit, M mode, P next garment, A auto garment, D cycle debug overlays")
 
         mode = config.mode
         debug = config.debug
         stats = Stats()
+        auto = matcher is not None
         frames = detected = dressed = 0
+        sources: dict[str, int] = {}
         total_inference_ms = total_render_ms = 0.0
         # Video files are paced to real time only when someone is watching.
         pace = not source.is_live and (vcam is not None or preview is not None)
@@ -173,6 +191,11 @@ def run(config: Config, max_frames: int | None = None, record: Path | None = Non
                 pose = smoother(detector.detect(frame.image, frame.t_ms), width, height)
                 segmentation = segmenter.latest()
                 geometry = legs.update(pose, width, height, segmentation)
+                if auto and matcher is not None and frames % TOP_SAMPLE_EVERY == 0:
+                    switched = matcher.update(sample_top_color(frame.image, pose, segmentation), frame.t_ms)
+                    if switched is not None:
+                        wardrobe.select(switched)
+                        print(f"garment {switched} (matches the shirt)")
 
                 render_start = time.perf_counter()
                 output, mesh = frame.image, None
@@ -194,12 +217,16 @@ def run(config: Config, max_frames: int | None = None, record: Path | None = Non
                 last = now
                 frames += 1
                 detected += pose.detected
+                if pose.detected:
+                    sources[pose.source] = sources.get(pose.source, 0) + 1
                 dressed += output is not frame.image
                 total_inference_ms += pose.inference_ms
                 total_render_ms += render_ms
 
                 if preview is not None:
-                    status = [f"mode {mode}  garment {wardrobe.current.id}"]
+                    status = [
+                        f"mode {mode}  garment {wardrobe.current.id}{' (auto)' if auto else ''}  pose {pose.source}"
+                    ]
                     key = preview.show(
                         render_preview(
                             output, pose, debug, stats, config.preview_mirror, status, mesh, segmentation
@@ -213,6 +240,12 @@ def run(config: Config, max_frames: int | None = None, record: Path | None = Non
                         mode = MODES[(MODES.index(mode) + 1) % len(MODES)]
                     elif key == ord("p"):
                         wardrobe.next()
+                        auto = False  # a hand-picked garment stays
+                    elif key == ord("a"):
+                        if matcher is None:
+                            matcher = OutfitMatcher(wardrobe.colors(), wardrobe.current.id)
+                        auto = not auto
+                        matcher.follow(wardrobe.current.id)
 
                 if pace:
                     # Fixed schedule, so processing time is absorbed instead of added.
@@ -234,4 +267,7 @@ def run(config: Config, max_frames: int | None = None, record: Path | None = Non
                 f"person detected in {100 * detected / frames:.0f}% of frames, "
                 f"pants drawn in {100 * dressed / frames:.0f}%"
             )
+            if detected:
+                share = ", ".join(f"{src} {100 * n / detected:.0f}%" for src, n in sorted(sources.items()))
+                print(f"pose   {share}")
     return 0
