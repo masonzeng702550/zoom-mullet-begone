@@ -6,10 +6,11 @@
 
 **[直接在瀏覽器試用 →](https://masonzeng702550.github.io/zoom-mullet-begone/)** 不用安裝：開啟鏡頭或上傳照片就會出現褲子。所有處理都在網頁裡進行，畫面不會離開你的電腦。
 
-視訊會議用的虛擬褲子。zoom-mullet-begone 用姿勢模型追蹤你的腿，畫上一條跟著腿動的褲子，再把畫面送到虛擬鏡頭，讓 Google Meet、Zoom、Teams 等軟體選用。
+視訊會議用的虛擬褲子。Zoom Mullet Begone 用姿勢模型追蹤你的腿，畫上一條跟著腿動的褲子，再把畫面送到虛擬鏡頭，讓 Google Meet、Zoom、Teams 等軟體選用。
 
 ## 功能
 
+- **直接在瀏覽器試用**：[線上展示](https://masonzeng702550.github.io/zoom-mullet-begone/)在網頁裡就能套上褲子，不需要安裝任何東西。
 - **褲子跟著每條腿動**：追蹤腰、大腿、膝蓋和小腿，褲子邊緣也會逐段貼合實際的身形，腿粗腿細都蓋得住，兩腿中間也不會露出來。
 - **和畫面融為一體**：自動配合畫面的光線、色調和鏡頭雜訊，邊緣柔化，前臂和手會保持在褲子前面。
 - **近距離也能用**：坐得很近、畫面只拍到腰和腿時，會改用第二個姿勢模型。
@@ -23,7 +24,7 @@
 ## 目前狀態
 
 - 在 macOS（Apple 晶片）上開發和測試。瀏覽器擴充功能已在 Google Meet 實測可用。
-- Windows 和 Linux 應該可以使用，但還沒實測。在這兩個系統上，背景模式能得知瀏覽器分頁何時使用 zoom-mullet-begone 鏡頭，但還無法得知桌面軟體何時打開虛擬鏡頭。
+- Windows 和 Linux 應該可以使用，但還沒實測。在這兩個系統上，背景模式能得知瀏覽器分頁何時使用 Zoom Mullet Begone 鏡頭，但還無法得知桌面軟體何時打開虛擬鏡頭。
 - 瀏覽器擴充功能支援以 Chromium 為基礎的瀏覽器（Chrome、Edge、Arc、Brave），目前還不支援 Safari 和 Firefox。
 - 只要畫面中看得到髖部就會畫上褲子。自動判斷「有沒有穿褲子」還在規劃中。
 
@@ -33,7 +34,7 @@
 - 把畫面送進會議的方式，以下擇一或兩者都用：
   - **瀏覽器擴充功能**（Google Meet 等網頁會議，不需要另外安裝東西）：見下方「瀏覽器擴充功能（不需要 OBS）」一節。
   - **虛擬鏡頭驅動**（所有軟體，包括 Zoom、Teams 桌面版）：
-    - **macOS / Windows**：[OBS Studio](https://obsproject.com/) 30 以上。打開一次 OBS，按「啟動虛擬攝影機」（Start Virtual Camera），再關掉 OBS。zoom-mullet-begone 使用的是 OBS 安裝的鏡頭驅動，平常不需要開著 OBS。
+    - **macOS / Windows**：[OBS Studio](https://obsproject.com/) 30 以上。打開一次 OBS，按「啟動虛擬攝影機」（Start Virtual Camera），再關掉 OBS。Zoom Mullet Begone 使用的是 OBS 安裝的鏡頭驅動，平常不需要開著 OBS。
     - **Linux**：[v4l2loopback](https://github.com/umlaeute/v4l2loopback)（用 `sudo modprobe v4l2loopback exclusive_caps=1` 載入，Chrome 才會列出它）。
 
 ## 安裝
@@ -66,9 +67,23 @@ macOS 第一次執行時，系統會詢問是否允許終端機使用鏡頭。
 
 會開啟預覽視窗，並立刻把畫面送到虛擬鏡頭。
 
+## 線上展示
+
+**[https://masonzeng702550.github.io/zoom-mullet-begone/](https://masonzeng702550.github.io/zoom-mullet-begone/)**
+
+一個練習用的會議室，任何人都能在不安裝任何東西的情況下試用：
+
+1. 按「**開啟鏡頭**」，或「**上傳照片或影片**」。
+2. 往後退，讓腰和腿都在畫面裡；上方的狀態標籤會顯示「已套上褲子」。
+3. 在畫面上方選擇樣式和顏色，按住「**按住看原圖**」可以比較原本的樣子。
+
+所有處理都在網頁裡進行：MediaPipe 的姿勢模型（WebAssembly，有顯示卡時會用顯示卡）找出你的腿，再用 WebGL 畫上褲子。畫面不會上傳。第一次開啟會下載約 15 MB（模型和執行環境）。支援 WebGL2 的新版 Chrome、Edge、Safari 和 Firefox 都能使用。
+
+線上展示是桌面程式的精簡移植版，沒有近距離備援模型、皮膚／衣服分割、前臂擋在褲子前面，以及縫線細節。要在真正的會議中使用，請搭配桌面程式和瀏覽器擴充功能或虛擬鏡頭。
+
 ## 瀏覽器擴充功能（不需要 OBS）
 
-`browser-extension/` 裡的擴充功能會在每個網站加入一個名為「Zoom Mullet Begone」的鏡頭。在 Google Meet（或其他網站）選擇它，網站就會收到 zoom-mullet-begone 的畫面。因為不需要虛擬鏡頭驅動，沒有安裝 OBS 也能使用。
+`browser-extension/` 裡的擴充功能會在每個網站加入一個名為「Zoom Mullet Begone」的鏡頭。在 Google Meet（或其他網站）選擇它，網站就會收到 Zoom Mullet Begone 的畫面。因為不需要虛擬鏡頭驅動，沒有安裝 OBS 也能使用。
 
 **安裝（Chrome、Edge、Arc、Brave）：**
 
@@ -78,30 +93,30 @@ macOS 第一次執行時，系統會詢問是否允許終端機使用鏡頭。
 
 **使用：**
 
-1. 啟動 zoom-mullet-begone，建議用背景模式：`.venv/bin/python -m zoom_mullet_begone --background`。
+1. 啟動 Zoom Mullet Begone，建議用背景模式：`.venv/bin/python -m zoom_mullet_begone --background`。
 2. 在 Google Meet：設定 → 視訊 → 攝影機 → **Zoom Mullet Begone**。其他網站在選擇鏡頭的地方也會看到它。
-3. 工具列上的擴充功能按鈕會顯示 zoom-mullet-begone 是否在執行，並提供設定頁的連結。
+3. 工具列上的擴充功能按鈕會顯示 Zoom Mullet Begone 是否在執行，並提供設定頁的連結。
 
 **隱私與安全：**
 
-- 只有已經取得鏡頭權限的網站才能使用 zoom-mullet-begone 鏡頭，規則和實體鏡頭完全一樣。
-- 畫面經由 127.0.0.1 從 zoom-mullet-begone 傳到瀏覽器，不會離開你的電腦。zoom-mullet-begone 只接受來自瀏覽器擴充功能的連線（依據網頁無法設定的請求標頭判斷：`Sec-Fetch-Site`，或擴充功能的 `Origin`），所以網站無法透過它讀取你的鏡頭。
-- 在背景模式下，分頁選用 zoom-mullet-begone 鏡頭時就會啟動，分頁停止使用後約 3 秒停止。
+- 只有已經取得鏡頭權限的網站才能使用 Zoom Mullet Begone 鏡頭，規則和實體鏡頭完全一樣。
+- 畫面經由 127.0.0.1 從 Zoom Mullet Begone 傳到瀏覽器，不會離開你的電腦。Zoom Mullet Begone 只接受來自瀏覽器擴充功能的連線（依據網頁無法設定的請求標頭判斷：`Sec-Fetch-Site`，或擴充功能的 `Origin`），所以網站無法透過它讀取你的鏡頭。
+- 在背景模式下，分頁選用 Zoom Mullet Begone 鏡頭時就會啟動，分頁停止使用後約 3 秒停止。
 
 桌面軟體（Zoom、Teams、FaceTime）看不到擴充功能提供的鏡頭，仍然需要虛擬鏡頭驅動。
 
-**如果畫面顯示「找不到 Zoom Mullet Begone」**，代表 zoom-mullet-begone 沒有在執行，或使用了別的連接埠。啟動它之後，分頁會在 2 秒內自動重新連線。分頁連上時，終端機會印出 `browser stream: a tab connected`。
+**如果畫面顯示「找不到 Zoom Mullet Begone」**，代表 Zoom Mullet Begone 沒有在執行，或使用了別的連接埠。啟動它之後，分頁會在 2 秒內自動重新連線。分頁連上時，終端機會印出 `browser stream: a tab connected`。
 
 ## 在會議和網站中使用
 
-使用虛擬鏡頭驅動時，zoom-mullet-begone 把畫面送到「OBS Virtual Camera」，系統會把它當成一般鏡頭，跟內建鏡頭一起列出。只要能選擇鏡頭的地方都能使用：
+使用虛擬鏡頭驅動時，Zoom Mullet Begone 把畫面送到「OBS Virtual Camera」，系統會把它當成一般鏡頭，跟內建鏡頭一起列出。只要能選擇鏡頭的地方都能使用：
 
 - **Google Meet**（任何瀏覽器）：設定 → 視訊 → 攝影機 → OBS Virtual Camera。
 - **Chrome、Edge、Arc 上的其他網站**：點網址列的鏡頭圖示選擇，或在 `chrome://settings/content/camera` 一次設定給所有網站。
 - **Safari 和 Firefox**：每個網站分別詢問，在鏡頭提示或網站設定中選 OBS Virtual Camera。
 - **Zoom、Teams、FaceTime、Discord、Slack**：在各軟體的視訊設定中選 OBS Virtual Camera。
 
-如果某個軟體一直使用內建鏡頭，zoom-mullet-begone 無法接管：macOS 允許每個軟體直接開啟實體鏡頭，也沒有辦法在整個系統層級把它換掉。zoom-mullet-begone 沒有執行時，虛擬鏡頭會顯示 OBS 的預設畫面。
+如果某個軟體一直使用內建鏡頭，Zoom Mullet Begone 無法接管：macOS 允許每個軟體直接開啟實體鏡頭，也沒有辦法在整個系統層級把它換掉。Zoom Mullet Begone 沒有執行時，虛擬鏡頭會顯示 OBS 的預設畫面。
 
 ## 背景模式
 
@@ -111,11 +126,11 @@ macOS 第一次執行時，系統會詢問是否允許終端機使用鏡頭。
 
 選單列圖示在待命時是空心的，使用中是實心的。
 
-- **待命**：鏡頭關閉，幾乎不做任何事（CPU 約 0%）。每秒檢查兩次：有沒有瀏覽器分頁選用了 zoom-mullet-begone 鏡頭，以及在 macOS 上有沒有軟體打開了 OBS Virtual Camera（透過 CoreMediaIO）。
-- **會議打開鏡頭**：zoom-mullet-begone 打開你的鏡頭，大約 3.5 秒後出現褲子。
+- **待命**：鏡頭關閉，幾乎不做任何事（CPU 約 0%）。每秒檢查兩次：有沒有瀏覽器分頁選用了 Zoom Mullet Begone 鏡頭，以及在 macOS 上有沒有軟體打開了 OBS Virtual Camera（透過 CoreMediaIO）。
+- **會議打開鏡頭**：Zoom Mullet Begone 打開你的鏡頭，大約 3.5 秒後出現褲子。
 - **瀏覽器分頁停止使用鏡頭**：約 3 秒後停止。由瀏覽器分頁啟動的執行不會動到 OBS Virtual Camera。
-- **桌面軟體關閉 OBS Virtual Camera**：zoom-mullet-begone 自己送出的畫面會讓虛擬鏡頭一直顯示為「使用中」，所以無法直接得知會議已經關閉。當鏡頭前連續一分鐘沒有人時，它會短暫停止送出畫面並重新檢查；如果已經沒有軟體在讀取鏡頭，就關閉鏡頭回到待命。如果會議結束後你還坐在電腦前，它會繼續執行，直到你離開畫面、結束程式，或在選單中關閉自動啟動。
-- **選單**：目前狀態、「開啟設定…」、「會議開鏡頭時自動套用」、「結束 zoom-mullet-begone」。
+- **桌面軟體關閉 OBS Virtual Camera**：Zoom Mullet Begone 自己送出的畫面會讓虛擬鏡頭一直顯示為「使用中」，所以無法直接得知會議已經關閉。當鏡頭前連續一分鐘沒有人時，它會短暫停止送出畫面並重新檢查；如果已經沒有軟體在讀取鏡頭，就關閉鏡頭回到待命。如果會議結束後你還坐在電腦前，它會繼續執行，直到你離開畫面、結束程式，或在選單中關閉自動啟動。
+- **選單**：目前狀態、「開啟設定…」、「會議開鏡頭時自動套用」、「結束 Zoom Mullet Begone」。
 
 在 Windows 和 Linux 上，背景模式還無法得知桌面軟體何時打開虛擬鏡頭：有安裝虛擬鏡頭驅動時會一直執行；沒有安裝時只服務瀏覽器擴充功能，隨分頁啟動和停止。
 
@@ -123,7 +138,7 @@ macOS 第一次執行時，系統會詢問是否允許終端機使用鏡頭。
 
 ## 設定頁
 
-zoom-mullet-begone 執行時，打開 `http://127.0.0.1:8765/`、在預覽視窗按 `S`，或在選單列選「開啟設定…」。可以：
+Zoom Mullet Begone 執行時，打開 `http://127.0.0.1:8765/`、在預覽視窗按 `S`，或在選單列選「開啟設定…」。可以：
 
 - 選擇樣式：卡其褲、深藍西裝褲、牛仔褲；
 - 選擇顏色：褲子原本的顏色、預設色票，或用取色器選任何顏色（布料的明暗、紋理和皺褶都會保留）；
@@ -208,7 +223,7 @@ pose:
 
 **依上衣搭配**：在肩膀到髖部之間取上衣的顏色（只取衣服，不含手），並在幾秒內平滑化，再為每件褲子評分：明暗對比越大分數越高，同色系又亮度相近（例如深藍配深藍）會扣分，上衣很鮮豔時偏好比較素的褲子。只有在另一件褲子明顯勝出並持續 1.5 秒時才會更換。必須看得到肩膀，所以坐得太近時會維持上一次的選擇。
 
-**褲子素材**：`garments/` 裡的每個資料夾包含一張正面的 RGBA `texture.png`，以及一份 `garment.yaml`，裡面有錨點（每條腿的腰、褲襠、膝蓋和褲腳）和裝飾線（縫線、邊線、褲摺和車縫線）。裝飾線會在螢幕上直接畫成清楚的線條，並隨網格彎曲，因為材質縮小顯示時，細節會消失。內建的褲子由 `scripts/make_garments.py` 產生。
+**褲子素材**：`garments/` 裡的每個資料夾包含一張正面的 RGBA `texture.png`，以及一份 `garment.yaml`，裡面有錨點（每條腿的腰、褲襠、膝蓋和褲腳）和裝飾線（縫線、邊線、褲摺和車縫線）。裝飾線會在螢幕上直接畫成清楚的線條，並隨網格彎曲，因為材質縮小顯示時，細節會消失。內建的褲子由 `scripts/make_garments.py` 產生。修改後請執行 `scripts/export_web_garments.py`，更新線上展示在 `site/garments/` 裡的副本。
 
 ## 開發
 
@@ -216,6 +231,8 @@ pose:
 .venv/bin/python -m pytest
 node tests/js/mjpeg.test.js   # browser extension
 ```
+
+線上展示放在 `site/`（`index.html` 是會議室，`pants-engine.js` 是在瀏覽器裡執行的處理流程，`garments/` 是匯出的褲子），不需要建置步驟。用 `python -m http.server -d site 8000` 啟動後打開 `http://localhost:8000/` 即可預覽。只要推到 `main` 的修改有動到 `site/`，就會自動部署到 GitHub Pages（`.github/workflows/pages.yml`）。
 
 需要模型或 `data/` 中私人測試影片的測試，在檔案不存在時會自動略過。用 `--record` 錄下的影片會存在 `data/`，這個資料夾不會被 commit。
 
@@ -225,5 +242,6 @@ node tests/js/mjpeg.test.js   # browser extension
 |---|---|---|
 | Pose Landmarker、Selfie Multiclass Segmenter | Google MediaPipe | Apache-2.0 |
 | RTMPose-s（Halpe-26）、YOLOX-tiny（Human-Art） | OpenMMLab | Apache-2.0 |
+| 網頁版 MediaPipe Tasks Vision（線上展示，從 jsDelivr 載入） | Google MediaPipe | Apache-2.0 |
 
 模型由 `scripts/download_models.py` 下載，不包含在這個儲存庫中。
