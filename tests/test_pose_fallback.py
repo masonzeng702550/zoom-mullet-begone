@@ -10,7 +10,7 @@ import pytest
 from helpers import make_pose, standing_points
 
 from meet_pants.config import Config
-from meet_pants.perception.chain import PoseChain
+from meet_pants.perception.chain import PoseChain, plausible_fallback
 from meet_pants.perception.rtmpose import RtmPoseDetector, to_mediapipe
 from meet_pants.perception.types import NUM_LANDMARKS, Lm, PoseFrame
 
@@ -151,3 +151,47 @@ def test_fallback_finds_hips_when_mediapipe_cannot(config: Config) -> None:
             assert 0 <= x < w and 0 <= y < h
         rtm.reset()
         assert rtm.detect(image, 0).has_hips()
+
+
+def _mp_with_shoulders(shoulder_y: float) -> PoseFrame:
+    pts = standing_points()
+    pts[Lm.LEFT_SHOULDER] = (300, shoulder_y)
+    pts[Lm.RIGHT_SHOULDER] = (140, shoulder_y)  # 160 px apart
+    pose = make_pose(pts, 400, 500)
+    hidden_hips = list(pose.landmarks)
+    for i in (Lm.LEFT_HIP, Lm.RIGHT_HIP):
+        lm = hidden_hips[i]
+        hidden_hips[i] = type(lm)(lm.x, lm.y, lm.z, 0.1, 0.1)
+    return PoseFrame(0, tuple(hidden_hips), None, 1.0)
+
+
+def test_fallback_hips_on_the_shoulders_are_rejected() -> None:
+    """Only the chest in view: RTMPose calls the shoulders hips. Hips are at y=200."""
+    rtm = _pose(33, source="rtmpose")
+    assert plausible_fallback(rtm, _mp_with_shoulders(190), 400, 500) is False
+    assert plausible_fallback(rtm, _mp_with_shoulders(50), 400, 500) is True  # 150 px above: a real torso
+    assert plausible_fallback(rtm, PoseFrame(0, None, None, 1.0), 400, 500) is True  # MediaPipe sees nobody
+
+
+def test_fallback_hips_below_the_frame_are_rejected() -> None:
+    pose = make_pose(standing_points(hip_y=495), 400, 500)
+    rtm = PoseFrame(0, pose.landmarks, None, 1.0, "rtmpose")
+    assert plausible_fallback(rtm, PoseFrame(0, None, None, 1.0), 400, 500) is False
+
+
+def test_chain_skips_an_implausible_fallback() -> None:
+    primary = FakeDetector([_mp_with_shoulders(190)])
+    fallback = FakeDetector([_pose(0, source="rtmpose")])
+    pose = PoseChain(primary, fallback).detect(IMAGE, 0)  # type: ignore[arg-type]
+    assert pose.source == "mediapipe" and not pose.has_hips()
+
+
+def test_fallback_without_a_visible_thigh_is_rejected() -> None:
+    """Only the belly in view: hips found, but no knee the model is sure about."""
+    pose = make_pose(standing_points(), 400, 500)
+    landmarks = list(pose.landmarks)
+    for i in (Lm.LEFT_KNEE, Lm.RIGHT_KNEE):
+        lm = landmarks[i]
+        landmarks[i] = type(lm)(lm.x, lm.y, lm.z, 0.2, 0.2)
+    rtm = PoseFrame(0, tuple(landmarks), None, 1.0, "rtmpose")
+    assert plausible_fallback(rtm, PoseFrame(0, None, None, 1.0), 400, 500) is False
