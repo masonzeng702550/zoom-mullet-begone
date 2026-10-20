@@ -14,6 +14,7 @@ fallback poses are rejected (see `plausible_fallback`).
 from __future__ import annotations
 
 import sys
+from collections.abc import Callable
 from dataclasses import replace
 from pathlib import Path
 
@@ -31,6 +32,10 @@ MAX_HIP_Y = 0.97
 # At least one knee this sure, i.e. a thigh actually in view. With only the belly
 # in view RTMPose still reports hips (~0.5) but its knees stay below ~0.28.
 MIN_KNEE_SCORE = 0.3
+# After the fallback finds nothing usable while MediaPipe sees the upper body,
+# skip it for this many frames: it costs about as much CPU as MediaPipe and such
+# misses come in long runs (sitting at a desk).
+FALLBACK_RETRY_FRAMES = 5
 
 
 def plausible_fallback(fallback: PoseFrame, primary: PoseFrame, width: int, height: int) -> bool:
@@ -52,41 +57,85 @@ def plausible_fallback(fallback: PoseFrame, primary: PoseFrame, width: int, heig
     return drop >= MIN_TORSO * shoulder_w
 
 
+def legs_out_of_view(primary: PoseFrame) -> bool:
+    """MediaPipe sees the upper body and places the hips below the frame: sitting at
+    a desk. RTMPose cannot find usable legs then, so it is not worth running."""
+    if primary.landmarks is None:
+        return False
+    if min(primary.visibility(Lm.LEFT_SHOULDER), primary.visibility(Lm.RIGHT_SHOULDER)) < SHOULDER_VISIBLE:
+        return False
+    hips_y = (primary.landmarks[Lm.LEFT_HIP].y + primary.landmarks[Lm.RIGHT_HIP].y) / 2
+    return hips_y > MAX_HIP_Y
+
+
 class PoseChain:
-    def __init__(self, primary: PoseDetector, fallback: object | None = None, hold_ms: int = 0):
+    def __init__(
+        self,
+        primary: PoseDetector,
+        fallback: object | None = None,
+        hold_ms: int = 0,
+        fallback_factory: Callable[[], object] | None = None,
+    ):
         self._primary = primary
         self._fallback = fallback  # RtmPoseDetector, or anything with the same detect()/reset()
+        self._fallback_factory = fallback_factory  # builds it on first use (saves ~115 MB until then)
         self._hold_ms = hold_ms
         self._last_good: PoseFrame | None = None
+        self._retry_in = 0  # frames to wait before trying the fallback again after a miss
 
     @classmethod
     def create(cls, pose_model: Path, models_dir: Path, config: PoseConfig) -> PoseChain:
         primary = PoseDetector(pose_model, config)
-        fallback = None
+        factory = None
         if config.fallback:
             detector = models_dir / config.fallback_detector
             model = models_dir / config.fallback_model
             if detector.exists() and model.exists():
-                from meet_pants.perception.rtmpose import RtmPoseDetector
 
-                fallback = RtmPoseDetector(detector, model)
+                def factory() -> object:
+                    from meet_pants.perception.rtmpose import RtmPoseDetector
+
+                    return RtmPoseDetector(detector, model)
             else:
                 print(
                     "pose fallback off: RTMPose models missing; run scripts/download_models.py",
                     file=sys.stderr,
                 )
-        return cls(primary, fallback, config.hold_ms)
+        return cls(primary, None, config.hold_ms, factory)
+
+    @property
+    def has_fallback(self) -> bool:
+        return self._fallback is not None or self._fallback_factory is not None
+
+    def _fallback_pose(self, bgr: np.ndarray, pose: PoseFrame) -> PoseFrame | None:
+        """RTMPose's pose if it is worth trying this frame and plausible, else None."""
+        if not self.has_fallback or legs_out_of_view(pose):
+            return None
+        if self._retry_in > 0:
+            self._retry_in -= 1
+            return None
+        if self._fallback is None:
+            self._fallback = self._fallback_factory()
+        rtm = self._fallback.detect(bgr, pose.t_ms, pose.person_mask)
+        rtm = replace(rtm, inference_ms=pose.inference_ms + rtm.inference_ms)
+        height, width = bgr.shape[:2]
+        if rtm.has_hips() and plausible_fallback(rtm, pose, width, height):
+            return rtm
+        if pose.detected:
+            # MediaPipe sees the person, just not the legs (upper body only): wait a
+            # bit before the next try. When it sees nobody (too close for it), keep
+            # trying every frame; that is the case the fallback exists for.
+            self._retry_in = FALLBACK_RETRY_FRAMES
+        return None
 
     def detect(self, bgr: np.ndarray, t_ms: int) -> PoseFrame:
         pose = self._primary.detect(bgr, t_ms)
-        if not pose.has_hips() and self._fallback is not None:
-            rtm = self._fallback.detect(bgr, pose.t_ms, pose.person_mask)
-            rtm = replace(rtm, inference_ms=pose.inference_ms + rtm.inference_ms)
-            height, width = bgr.shape[:2]
-            if rtm.has_hips() and plausible_fallback(rtm, pose, width, height):
-                pose = rtm
-        elif self._fallback is not None:
-            self._fallback.reset()  # re-detect the person next time it is needed
+        if not pose.has_hips():
+            pose = self._fallback_pose(bgr, pose) or pose
+        else:
+            self._retry_in = 0
+            if self._fallback is not None:
+                self._fallback.reset()  # re-detect the person next time it is needed
 
         if pose.has_hips():
             self._last_good = pose

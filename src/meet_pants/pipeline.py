@@ -34,6 +34,9 @@ from meet_pants.ui.settings import GarmentChoice, SettingsHub, SettingsServer, e
 
 FADE_IN_MS = 120
 TOP_SAMPLE_EVERY = 5  # frames between shirt color samples
+# A skin/clothes segmentation older than this is not used (the segmenter only
+# runs while legs are in view or a shirt sample is due).
+SEGMENTATION_MAX_AGE_MS = 200
 
 # D cycles the preview overlays through these presets.
 DEBUG_PRESETS = (
@@ -164,7 +167,7 @@ def run(
         print(f"input  {config.input}  {width}x{height} @ {source.fps:.0f} fps")
 
         detector = stack.enter_context(PoseChain.create(config.pose_model_path, config.models_path, config.pose))
-        segmenter = stack.enter_context(BodySegmenter(config.segmenter_model_path))
+        segmenter = stack.enter_context(BodySegmenter(config.segmenter_model_path, gpu=config.pose.segmenter_gpu))
         smoother = LandmarkSmoother(config.smoothing)
         legs = LegTracker()
         compositor = Compositor()
@@ -209,6 +212,7 @@ def run(
         debug = config.debug
         stats = Stats()
         auto = matcher is not None
+        legs_in_view = True
         frames = detected = dressed = 0
         sources: dict[str, int] = {}
         total_inference_ms = total_render_ms = 0.0
@@ -228,11 +232,18 @@ def run(
 
                 if recorder is not None:
                     recorder.write(frame.image)
-                if frames % max(1, config.pose.segment_every) == 0:
+                # The segmenter is the most expensive model: run it only while legs are
+                # in view, and just before a shirt color sample is due.
+                need_legs = legs_in_view and frames % max(1, config.pose.segment_every) == 0
+                need_top = auto and frames % TOP_SAMPLE_EVERY == TOP_SAMPLE_EVERY - 1
+                if need_legs or need_top:
                     segmenter.submit(frame.image, frame.t_ms)  # runs while the pose model works
                 pose = smoother(detector.detect(frame.image, frame.t_ms), width, height)
                 segmentation = segmenter.latest()
+                if segmentation is not None and frame.t_ms - segmentation.t_ms > SEGMENTATION_MAX_AGE_MS:
+                    segmentation = None
                 geometry = legs.update(pose, width, height, segmentation)
+                legs_in_view = pose.has_hips()
                 if hub.version != seen_version:  # changed on the settings page
                     seen_version = hub.version
                     auto, matcher = apply_choice(hub.choice, wardrobe, matcher)

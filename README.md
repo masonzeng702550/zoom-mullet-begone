@@ -45,6 +45,22 @@ Preview keys: `M` toggles pants on/off, `P` next garment (stops automatic matchi
 
 The preview is mirrored; the virtual camera is not (meeting apps mirror your self-view themselves). Overlays appear only in the preview.
 
+## Using it in meetings and websites
+
+meet-pants sends its video to **OBS Virtual Camera**, which macOS lists as a normal camera next to the built-in one. Anything that lets you pick a camera can use it:
+
+- **Google Meet** (any browser): Settings → Video → Camera → *OBS Virtual Camera*. Other sites in Chrome, Edge or Arc: the camera icon in the address bar, or set it once for all sites in `chrome://settings/content/camera`. Safari and Firefox ask per site; pick *OBS Virtual Camera* in their camera prompt or site settings.
+- **Zoom, Teams, FaceTime, Discord, Slack**: choose *OBS Virtual Camera* in the app's video settings.
+
+It cannot take over apps or sites that keep using the built-in camera: macOS gives every app direct access to the real camera and has no way to swap in another one system-wide. Start meet-pants before joining (the virtual camera shows the OBS placeholder when meet-pants is not running), and you do not need the preview during a call (`--no-preview`).
+
+## CPU, memory and heat
+
+- The skin/clothes segmenter runs on the GPU and only while your legs are in view (or briefly for a shirt-color sample); sitting at a desk with only your upper body in view, almost nothing but the pose model runs.
+- The RTMPose fallback is loaded the first time it is needed, and is not run while MediaPipe sees your upper body with the hips below the frame.
+- The pose model stays on the CPU: MediaPipe's macOS GPU path leaks every input frame. `pose: {segmenter_gpu: false}` moves the segmenter back to the CPU (about 400 MB less memory, more CPU).
+- To cool down further: `--fps 24` (or 20), `--no-preview`, and `--resolution 960x540`.
+
 ## Pose fallback
 
 MediaPipe needs most of the torso in view. When you sit close and only your waist and legs are visible, an RTMPose model (YOLOX person detector + 26-keypoint body-with-feet, OpenMMLab, Apache-2.0, run with onnxruntime) takes over for those frames. If both miss for a moment, the last pose is held for 300 ms so the pants do not flicker. The preview HUD shows which one is active (`pose mediapipe` / `rtmpose` / `hold`). Turn it off with `pose: {fallback: false}` in the config file.

@@ -21,9 +21,10 @@ from typing import Any
 from urllib.parse import parse_qs, urlparse
 
 import cv2
+import numpy as np
 import yaml
 
-from meet_pants.render.garment import Garment, GarmentError, list_garments, load_garment, parse_color, with_color
+from meet_pants.render.garment import GarmentError, list_garments, load_garment, parse_color, recolor_texture
 
 PAGE = Path(__file__).with_name("settings.html")
 THUMB_SIZE = (120, 180)  # w, h
@@ -86,7 +87,9 @@ class SettingsHub:
         self._lock = threading.Lock()
         self._choice = choice
         self.version = 0
-        self._garments: dict[str, Garment] = {}
+        # name and a thumbnail-sized texture per garment; the full textures stay
+        # with the pipeline's wardrobe
+        self._garments: dict[str, tuple[str, np.ndarray]] = {}
         self._thumbs: dict[tuple[str, str], bytes] = {}
 
     @property
@@ -109,10 +112,12 @@ class SettingsHub:
         self.set(choice)
         return choice
 
-    def garment(self, garment_id: str) -> Garment:
+    def _garment(self, garment_id: str) -> tuple[str, np.ndarray]:
         with self._lock:
             if garment_id not in self._garments:
-                self._garments[garment_id] = load_garment(self.garments_dir, garment_id)
+                garment = load_garment(self.garments_dir, garment_id)
+                small = cv2.resize(garment.texture, THUMB_SIZE, interpolation=cv2.INTER_AREA)
+                self._garments[garment_id] = (garment.name, small)
             return self._garments[garment_id]
 
     def thumbnail(self, garment_id: str, color: str) -> bytes:
@@ -122,8 +127,9 @@ class SettingsHub:
             cached = self._thumbs.get(key)
         if cached is not None:
             return cached
-        texture = with_color(self.garment(garment_id), color).texture
-        small = cv2.resize(texture, THUMB_SIZE, interpolation=cv2.INTER_AREA)
+        small = self._garment(garment_id)[1]
+        if color:
+            small = recolor_texture(small, parse_color(color))
         ok, png = cv2.imencode(".png", small)
         if not ok:
             raise GarmentError("could not encode thumbnail")
@@ -135,7 +141,7 @@ class SettingsHub:
     def state(self) -> dict[str, Any]:
         return {
             **asdict(self.choice),
-            "garments": [{"id": gid, "name": self.garment(gid).name} for gid in self.garment_ids],
+            "garments": [{"id": gid, "name": self._garment(gid)[0]} for gid in self.garment_ids],
             "presets": [{"name": n, "color": c} for n, c in PRESET_COLORS],
         }
 

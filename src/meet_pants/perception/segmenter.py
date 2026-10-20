@@ -9,15 +9,17 @@ lag is not visible.
 
 from __future__ import annotations
 
+import sys
 import threading
 from dataclasses import dataclass
 from pathlib import Path
 
 import cv2
-import mediapipe as mp
 import numpy as np
 from mediapipe.tasks import python as mp_tasks
 from mediapipe.tasks.python import vision
+
+from meet_pants.perception.pose import to_mp_image
 
 BACKGROUND, HAIR, BODY_SKIN, FACE_SKIN, CLOTHES, OTHERS = range(6)
 MODEL_NAME = "selfie_multiclass_256x256.tflite"
@@ -40,14 +42,17 @@ class Segmentation:
 
 
 class BodySegmenter:
-    def __init__(self, model_path: Path):
-        options = vision.ImageSegmenterOptions(
-            base_options=mp_tasks.BaseOptions(model_asset_path=str(model_path)),
-            running_mode=vision.RunningMode.VIDEO,
-            output_category_mask=True,
-            output_confidence_masks=False,
-        )
-        self._segmenter = vision.ImageSegmenter.create_from_options(options)
+    def __init__(self, model_path: Path, gpu: bool = False):
+        self._model_path = model_path
+        self.gpu = False
+        if gpu:
+            try:
+                self._segmenter = self._create(gpu=True)
+                self.gpu = True
+            except (RuntimeError, ValueError) as e:
+                print(f"segmenter on CPU (GPU unavailable: {e})", file=sys.stderr)
+        if not self.gpu:
+            self._segmenter = self._create(gpu=False)
         self._cond = threading.Condition()
         self._pending: tuple[np.ndarray, int] | None = None
         self._result: tuple[np.ndarray, int, tuple[int, int]] | None = None
@@ -57,6 +62,28 @@ class BodySegmenter:
         self._running = True
         self._thread = threading.Thread(target=self._loop, name="segmenter", daemon=True)
         self._thread.start()
+
+    def _create(self, gpu: bool) -> vision.ImageSegmenter:
+        delegate = mp_tasks.BaseOptions.Delegate.GPU if gpu else mp_tasks.BaseOptions.Delegate.CPU
+        options = vision.ImageSegmenterOptions(
+            base_options=mp_tasks.BaseOptions(model_asset_path=str(self._model_path), delegate=delegate),
+            running_mode=vision.RunningMode.VIDEO,
+            output_category_mask=True,
+            output_confidence_masks=False,
+        )
+        return vision.ImageSegmenter.create_from_options(options)
+
+    def _segment(self, small: np.ndarray, t_ms: int) -> np.ndarray:
+        try:
+            result = self._segmenter.segment_for_video(to_mp_image(small, self.gpu), t_ms)
+        except (RuntimeError, ValueError) as e:
+            if not self.gpu:
+                raise
+            print(f"segmenter moved to CPU (GPU failed: {e})", file=sys.stderr)
+            self._segmenter.close()
+            self._segmenter, self.gpu = self._create(gpu=False), False
+            result = self._segmenter.segment_for_video(to_mp_image(small, False), t_ms)
+        return np.array(result.category_mask.numpy_view(), dtype=np.uint8)
 
     def submit(self, bgr: np.ndarray, t_ms: int) -> None:
         """Queue a frame; replaces any frame still waiting (only the newest matters)."""
@@ -78,13 +105,9 @@ class BodySegmenter:
                 h, w = bgr.shape[:2]
                 small_h = max(1, round(h * INPUT_WIDTH / w))
                 small = cv2.resize(bgr, (INPUT_WIDTH, small_h), interpolation=cv2.INTER_AREA)
-                rgb = cv2.cvtColor(small, cv2.COLOR_BGR2RGB)
                 t_ms = max(t_ms, self._last_t_ms + 1)  # VIDEO mode needs increasing timestamps
                 self._last_t_ms = t_ms
-                result = self._segmenter.segment_for_video(
-                    mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb), t_ms
-                )
-                category = np.array(result.category_mask.numpy_view(), dtype=np.uint8).reshape(small_h, INPUT_WIDTH)
+                category = self._segment(small, t_ms).reshape(small_h, INPUT_WIDTH)
             except BaseException as e:  # surfaced to the main thread on the next submit()
                 with self._cond:
                     self._error = e

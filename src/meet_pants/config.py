@@ -25,6 +25,12 @@ class PoseConfig:
     min_presence_confidence: float = 0.5
     min_tracking_confidence: float = 0.5
     segmentation_mask: bool = True
+    # Run a MediaPipe model on the GPU: about half the CPU time, less heat. Falls
+    # back to the CPU when the GPU cannot be used. The pose model stays on the CPU
+    # by default: on macOS its GPU path leaks each input frame (~3.7 MB per frame
+    # at 720p, mediapipe 0.10). The segmenter's GPU path does not leak.
+    pose_gpu: bool = False
+    segmenter_gpu: bool = True
     # Run the skin/clothes segmenter on every Nth frame (its mask is reused in
     # between). It is the most expensive model; legs barely move in 1/15 s.
     segment_every: int = 2

@@ -50,8 +50,11 @@ def bgr_to_lab(bgr: np.ndarray) -> np.ndarray:
 
 
 def texture_color(bgra: np.ndarray) -> np.ndarray:
-    """Median Lab of a garment texture's opaque pixels."""
-    pixels = bgra[bgra[..., 3] > 200][:, :3]
+    """Median Lab of a garment texture's opaque pixels (from a 1/8 size copy: same
+    median, a fraction of the memory)."""
+    h, w = bgra.shape[:2]
+    small = cv2.resize(bgra, (max(1, w // 8), max(1, h // 8)), interpolation=cv2.INTER_AREA)
+    pixels = small[small[..., 3] > 200][:, :3]
     if len(pixels) == 0:
         raise ValueError("texture has no opaque pixels")
     return np.median(bgr_to_lab(pixels), axis=0)

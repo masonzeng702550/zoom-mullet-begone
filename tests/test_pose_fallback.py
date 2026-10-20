@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
 from pathlib import Path
 
 import cv2
@@ -10,7 +11,7 @@ import pytest
 from helpers import make_pose, standing_points
 
 from meet_pants.config import Config
-from meet_pants.perception.chain import PoseChain, plausible_fallback
+from meet_pants.perception.chain import FALLBACK_RETRY_FRAMES, PoseChain, plausible_fallback
 from meet_pants.perception.rtmpose import RtmPoseDetector, to_mediapipe
 from meet_pants.perception.types import NUM_LANDMARKS, Lm, PoseFrame
 
@@ -141,7 +142,9 @@ def test_fallback_finds_hips_when_mediapipe_cannot(config: Config) -> None:
         pytest.skip("data/headless_430.jpg missing (private webcam crop, not committed)")
     rtm = RtmPoseDetector(*models)
     for image in images:
-        with PoseChain.create(config.pose_model_path, config.models_path, config.pose) as chain:
+        # The CPU model misses this frame (the GPU one happens to find it).
+        cpu = replace(config.pose, pose_gpu=False)
+        with PoseChain.create(config.pose_model_path, config.models_path, cpu) as chain:
             assert not chain._primary.detect(image, 0).has_hips()
             pose = chain.detect(image, 100)
         assert pose.source == "rtmpose" and pose.has_hips()
@@ -195,3 +198,49 @@ def test_fallback_without_a_visible_thigh_is_rejected() -> None:
         landmarks[i] = type(lm)(lm.x, lm.y, lm.z, 0.2, 0.2)
     rtm = PoseFrame(0, tuple(landmarks), None, 1.0, "rtmpose")
     assert plausible_fallback(rtm, PoseFrame(0, None, None, 1.0), 400, 500) is False
+
+
+def test_fallback_is_skipped_when_mediapipe_puts_the_hips_below_the_frame() -> None:
+    """Sitting at a desk: MediaPipe sees the shoulders, hips extrapolated off-screen."""
+    pts = standing_points(hip_y=560)  # frame is 500 tall
+    pose = make_pose(pts, 400, 500, visibility=0.95)
+    landmarks = list(pose.landmarks)
+    for i in (Lm.LEFT_HIP, Lm.RIGHT_HIP):
+        lm = landmarks[i]
+        landmarks[i] = type(lm)(lm.x, lm.y, lm.z, 0.1, 0.1)
+    primary = FakeDetector([PoseFrame(0, tuple(landmarks), None, 1.0)])
+    fallback = FakeDetector([_pose(0, source="rtmpose")])
+    PoseChain(primary, fallback).detect(IMAGE, 0)  # type: ignore[arg-type]
+    assert fallback.calls == 0
+
+
+def test_fallback_waits_after_a_miss_while_mediapipe_sees_the_person() -> None:
+    primary = FakeDetector([_mp_with_shoulders(190)])  # upper body seen, hips not
+    fallback = FakeDetector([None])  # finds nobody
+    chain = PoseChain(primary, fallback)  # type: ignore[arg-type]
+    for i in range(1 + FALLBACK_RETRY_FRAMES + 1):
+        chain.detect(IMAGE, i * 33)
+    assert fallback.calls == 2  # first frame, then again after the pause
+
+
+def test_fallback_keeps_trying_when_mediapipe_sees_nobody() -> None:
+    primary = FakeDetector([None])
+    fallback = FakeDetector([None])
+    chain = PoseChain(primary, fallback)  # type: ignore[arg-type]
+    for i in range(4):
+        chain.detect(IMAGE, i * 33)
+    assert fallback.calls == 4
+
+
+def test_fallback_model_loads_on_first_use() -> None:
+    built: list[FakeDetector] = []
+
+    def factory() -> FakeDetector:
+        built.append(FakeDetector([_pose(0, source="rtmpose")]))
+        return built[-1]
+
+    chain = PoseChain(FakeDetector([_pose(0)]), None, fallback_factory=factory)  # type: ignore[arg-type]
+    chain.detect(IMAGE, 0)
+    assert built == []  # MediaPipe had the hips: nothing loaded
+    chain._primary = FakeDetector([None])  # type: ignore[assignment]
+    assert chain.detect(IMAGE, 33).source == "rtmpose" and len(built) == 1
