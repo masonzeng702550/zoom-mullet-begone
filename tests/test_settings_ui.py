@@ -123,20 +123,32 @@ def test_browser_stream_only_for_extensions(tmp_path: Path) -> None:
     with SettingsServer(hub, 0) as server:
         port = int(server.url.rsplit(":", 1)[1].strip("/"))
 
-        def get(origin: str | None) -> http.client.HTTPResponse:
+        def get(headers: dict[str, str]) -> http.client.HTTPResponse:
             conn = http.client.HTTPConnection("127.0.0.1", port, timeout=5)
-            headers = {"Origin": origin} if origin else {}
             conn.request("GET", "/stream.mjpg", headers=headers)
             return conn.getresponse()
 
-        # Websites (and requests without an Origin) cannot read the camera.
-        for origin in (None, "https://meet.google.com", "http://127.0.0.1:%d" % port):
-            r = get(origin)
-            assert r.status == 403
+        page = {"Sec-Fetch-Site": "cross-site", "Sec-Fetch-Mode": "cors"}
+        # Websites (fetch, <img>, no-cors) and bare local clients cannot read the camera.
+        for headers in (
+            {},
+            {"Origin": "https://meet.google.com", **page},
+            {"Sec-Fetch-Site": "cross-site", "Sec-Fetch-Mode": "no-cors", "Sec-Fetch-Dest": "image"},
+            {"Origin": "http://127.0.0.1:%d" % port, "Sec-Fetch-Site": "same-origin", "Sec-Fetch-Mode": "cors"},
+            {"Sec-Fetch-Site": "none", "Sec-Fetch-Mode": "navigate"},  # typed into the address bar
+        ):
+            r = get(headers)
+            assert r.status == 403, headers
             r.read()
         assert hub.feed.clients == 0
 
-        r = get("chrome-extension://abcdefghijklmnop")
+        # What Chrome sends for the extension's fetch under host permissions.
+        r = get({"Sec-Fetch-Site": "none", "Sec-Fetch-Mode": "cors", "Sec-Fetch-Dest": "empty"})
+        assert r.status == 200
+        r.close()
+        assert wait_until(lambda: hub.feed.clients == 0)
+
+        r = get({"Origin": "chrome-extension://abcdefghijklmnop"})
         assert r.status == 200
         assert r.getheader("Content-Type").startswith("multipart/x-mixed-replace")
         assert wait_until(lambda: hub.feed.clients == 1)

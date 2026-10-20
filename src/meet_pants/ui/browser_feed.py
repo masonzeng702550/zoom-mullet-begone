@@ -4,15 +4,20 @@ The extension adds a "meet-pants" camera to web pages and reads frames from
 the settings server as an MJPEG stream (`/stream.mjpg`). Frames are encoded
 only while a client is connected.
 
-Only browser extensions may read the stream: the request must carry an
-`Origin: chrome-extension://…` (or moz-extension) header, which web pages
-cannot forge, so a website cannot pull the camera through it.
+Only browser extensions may read the stream, so a website cannot pull the
+camera through it. Chrome sends no Origin header for an extension's fetch
+under its host permissions, but marks it `Sec-Fetch-Site: none` with
+`Sec-Fetch-Mode: cors`. Web pages cannot produce that (their requests are
+cross-site, same-site or same-origin, and scripts cannot set Sec-Fetch-*),
+and an extension Origin (chrome-extension://, moz-extension://) is accepted
+too.
 """
 
 from __future__ import annotations
 
 import threading
 import time
+from collections.abc import Mapping
 
 import cv2
 import numpy as np
@@ -21,8 +26,11 @@ JPEG_QUALITY = 80
 EXTENSION_ORIGINS = ("chrome-extension://", "moz-extension://")
 
 
-def is_extension_origin(origin: str | None) -> bool:
-    return bool(origin) and origin.startswith(EXTENSION_ORIGINS)
+def is_extension_request(headers: Mapping[str, str]) -> bool:
+    origin = headers.get("Origin")
+    if origin:
+        return origin.startswith(EXTENSION_ORIGINS)
+    return headers.get("Sec-Fetch-Site") == "none" and headers.get("Sec-Fetch-Mode") == "cors"
 
 
 class FrameFeed:

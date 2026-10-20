@@ -12,6 +12,9 @@ It listens on 127.0.0.1 only and accepts changes only from its own page
 from __future__ import annotations
 
 import json
+import select
+import socket
+import sys
 import threading
 import webbrowser
 from dataclasses import asdict, dataclass, replace
@@ -25,7 +28,7 @@ import numpy as np
 import yaml
 
 from meet_pants.render.garment import GarmentError, list_garments, load_garment, parse_color, recolor_texture
-from meet_pants.ui.browser_feed import FrameFeed, is_extension_origin
+from meet_pants.ui.browser_feed import FrameFeed, is_extension_request
 
 PAGE = Path(__file__).with_name("settings.html")
 MJPEG_BOUNDARY = "meetpantsframe"
@@ -221,11 +224,22 @@ def _handler(hub: SettingsHub) -> type[BaseHTTPRequestHandler]:
             else:
                 self._send(404, b"not found", "text/plain")
 
+        def _client_gone(self) -> bool:
+            """True once the browser closed the connection (readable with nothing to read)."""
+            try:
+                readable, _, _ = select.select([self.connection], [], [], 0)
+                return bool(readable) and self.connection.recv(1, socket.MSG_PEEK) == b""
+            except OSError:
+                return True
+
         def _stream(self) -> None:
             """MJPEG for the browser extension; only extensions may read it."""
-            if not is_extension_origin(self.headers.get("Origin")):
+            if not is_extension_request(self.headers):
+                seen = {k: self.headers.get(k) for k in ("Origin", "Sec-Fetch-Site", "Sec-Fetch-Mode")}
+                print(f"browser stream refused, not from the extension: {seen}", file=sys.stderr)
                 self._send(403, b"only the meet-pants browser extension may read the stream", "text/plain")
                 return
+            print("browser stream: a tab connected")
             self.send_response(200)
             self.send_header("Content-Type", f"multipart/x-mixed-replace; boundary={MJPEG_BOUNDARY}")
             self.send_header("Cache-Control", "no-store")
@@ -236,6 +250,8 @@ def _handler(hub: SettingsHub) -> type[BaseHTTPRequestHandler]:
                 while not hub.feed.closed:
                     item = hub.feed.next_frame(seq)
                     if item is None:
+                        if self._client_gone():  # no frame to write, so check the socket itself
+                            break
                         continue
                     seq, jpeg = item
                     self.wfile.write(
