@@ -4,6 +4,8 @@
 
 > **Zoom mullet，退散！** 上半身正式，下半身也正式。（舊名 *meet-pants*。）
 
+**[到線上測試會議室試用 →](https://masonzeng702550.github.io/zoom-mullet-begone/)** 專為瀏覽器擴充功能準備的練習會議室，畫面只留在你的電腦上。
+
 視訊會議用的虛擬褲子。zoom-mullet-begone 用姿勢模型追蹤你的腿，畫上一條跟著腿動的褲子，再把畫面送到虛擬鏡頭，讓 Google Meet、Zoom、Teams 等軟體選用。
 
 ## 功能
@@ -79,6 +81,7 @@ macOS 第一次執行時，系統會詢問是否允許終端機使用鏡頭。
 1. 啟動 zoom-mullet-begone，建議用背景模式：`.venv/bin/python -m zoom_mullet_begone --background`。
 2. 在 Google Meet：設定 → 視訊 → 攝影機 → **Zoom Mullet Begone**。其他網站在選擇鏡頭的地方也會看到它。
 3. 工具列上的擴充功能按鈕會顯示 zoom-mullet-begone 是否在執行，並提供設定頁的連結。
+4. 不想開真的會議也能試：打開[線上測試會議室](https://masonzeng702550.github.io/zoom-mullet-begone/)，開啟鏡頭後選 **Zoom Mullet Begone**。
 
 **隱私與安全：**
 

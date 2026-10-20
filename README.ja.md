@@ -4,6 +4,8 @@
 
 > **Zoom マレット、退散！** 上も下もきちんとビジネス。（旧名 *meet-pants*）
 
+**[オンラインのテスト会議室で試す →](https://masonzeng702550.github.io/zoom-mullet-begone/)** ブラウザー拡張機能を試すための練習用会議室です。映像はこのコンピューターの外に出ません。
+
 ビデオ会議用のバーチャルパンツです。zoom-mullet-begone は姿勢推定モデルで脚を追跡し、脚の動きに合わせてパンツを描画して、その映像を仮想カメラに送ります。Google Meet、Zoom、Teams などのアプリで、このカメラを選んで使えます。
 
 ## 機能
@@ -79,6 +81,7 @@ macOS では、初回起動時にターミナルアプリのカメラ使用許�
 1. zoom-mullet-begone を起動します。バックグラウンドモードがおすすめです：`.venv/bin/python -m zoom_mullet_begone --background`。
 2. Google Meet では、設定 → 動画 → カメラ → **Zoom Mullet Begone** を選びます。ほかのサイトでも、カメラを選ぶ場所に表示されます。
 3. ツールバーの拡張機能ボタンで、zoom-mullet-begone が動いているかを確認でき、設定ページも開けます。
+4. 実際の会議なしで試すには、[オンラインのテスト会議室](https://masonzeng702550.github.io/zoom-mullet-begone/)を開き、カメラをオンにして **Zoom Mullet Begone** を選びます。
 
 **プライバシーと安全性：**
 
