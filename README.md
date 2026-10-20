@@ -34,16 +34,32 @@ Then pick **OBS Virtual Camera** in your meeting app.
 | `--mode always` / `--mode off` | draw pants whenever hips are visible, or never |
 | `--garment jeans_indigo` | use this garment (`dress_navy`, `chino_khaki`, `jeans_indigo`); turns off automatic matching |
 | `--no-auto-garment` | keep the starting garment instead of matching the shirt |
+| `--background` | run from the menu bar, start when a meeting opens the virtual camera (macOS) |
 | `--settings` | only open the pants settings page (no camera) |
 | `--no-vcam` | preview only |
 | `--no-preview` | virtual camera only |
 | `--debug landmarks,masks,mesh,hud` | preview overlays (`none` to hide) |
 | `--record data/clip.mp4` | also save the raw camera input (to reproduce issues; `data/` is gitignored) |
-| `--config path.yaml` | config file (default `~/.config/meet-pants/config.yaml`) |
+| `--config path.yaml` | config file (default: `~/Library/Application Support/meet-pants/config.yaml` on macOS, `%APPDATA%\\meet-pants\\config.yaml` on Windows, `~/.config/meet-pants/config.yaml` on Linux) |
 
 Preview keys: `M` toggles pants on/off, `P` next garment (stops automatic matching), `A` toggles automatic matching, `S` opens the settings page, `D` cycles overlays (skeleton → skeleton + person mask (purple) and skin (orange) → mesh → off), `Esc` or `Q` quits.
 
 The preview is mirrored; the virtual camera is not (meeting apps mirror your self-view themselves). Overlays appear only in the preview.
+
+## Background mode (macOS)
+
+```bash
+.venv/bin/python -m meet_pants --background
+```
+
+meet-pants then lives in the menu bar (a pants icon: outlined while waiting, filled while in use) and starts by itself:
+
+- **Waiting**: the camera is off and nothing runs (about 0% CPU, ~170 MB). Twice a second it asks macOS (CoreMediaIO) whether any app opened *OBS Virtual Camera*.
+- **A meeting opens the camera**: meet-pants turns on the camera and the pants appear about 2.5 s later (the meeting shows the OBS placeholder until then).
+- **The meeting closes the camera**: meet-pants' own frames keep the virtual camera "in use", so it cannot see that directly. After nobody has been in front of the camera for a minute it stops sending for a moment and checks again; if no app reads the camera, it turns the camera off and waits. (If you stay at the desk after the meeting, it keeps running until you leave or choose *Quit* / untick *auto start* in the menu.)
+- The menu has the status, *Open settings* (the settings page now also shows a live view of what the meeting sees), the auto-start switch and *Quit*.
+
+On other systems `--background` cannot tell when a meeting opens the camera yet and simply runs all the time.
 
 ## Using it in meetings and websites
 
@@ -73,7 +89,7 @@ By default the pants are picked to go with your top. The shirt color is sampled 
 
 ## Pants settings page
 
-While meet-pants runs, `http://127.0.0.1:8765/` (or `S` in the preview) shows a settings page: choose the style (khaki chinos, navy dress trousers, jeans), a color (the garment's own, a preset, or any color from the picker), or leave it to the shirt matching. A change shows up on screen at once and is saved to `~/.config/meet-pants/config.yaml` (`garment`, `garment_color`, `garment_auto`) as the default for next time. `python -m meet_pants --settings` opens the page without starting the camera.
+While meet-pants runs, `http://127.0.0.1:8765/` (or `S` in the preview) shows a settings page: choose the style (khaki chinos, navy dress trousers, jeans), a color (the garment's own, a preset, or any color from the picker), or leave it to the shirt matching. A change shows up on screen at once and is saved to the config file (`garment`, `garment_color`, `garment_auto`) as the default for next time. `python -m meet_pants --settings` opens the page without starting the camera.
 
 Recoloring keeps the fabric's shading, weave and folds. The page only listens on 127.0.0.1 and only accepts changes from itself; set `settings_port: 0` to turn it off.
 

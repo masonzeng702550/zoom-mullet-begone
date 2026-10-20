@@ -88,3 +88,22 @@ def test_explicit_garment_turns_off_auto_matching() -> None:
     assert cli.args_to_overrides(parse(["--garment", "jeans_indigo", "--auto-garment"]))["garment_auto"] is True
     assert cli.args_to_overrides(parse(["--no-auto-garment"]))["garment_auto"] is False
     assert "garment_auto" not in cli.args_to_overrides(parse([]))
+
+
+def test_legacy_config_moves_to_the_os_settings_folder(tmp_path: Path) -> None:
+    from meet_pants.config import migrate_legacy_config
+
+    legacy = tmp_path / "old" / "meet-pants" / "config.yaml"
+    current = tmp_path / "new" / "meet-pants" / "config.yaml"
+    legacy.parent.mkdir(parents=True)
+    legacy.write_text("garment: jeans_indigo\n", encoding="utf-8")
+    assert migrate_legacy_config(legacy, current) is True
+    assert current.read_text(encoding="utf-8") == "garment: jeans_indigo\n"
+    assert not legacy.exists() and not legacy.parent.exists()
+    # already moved, or nothing to move
+    assert migrate_legacy_config(legacy, current) is False
+    # never overwrites existing settings
+    legacy.parent.mkdir(parents=True)
+    legacy.write_text("garment: chino_khaki\n", encoding="utf-8")
+    assert migrate_legacy_config(legacy, current) is False
+    assert current.read_text(encoding="utf-8") == "garment: jeans_indigo\n"

@@ -7,8 +7,12 @@ from pathlib import Path
 from typing import Any
 
 import yaml
+from platformdirs import user_config_path
 
-DEFAULT_CONFIG_PATH = Path.home() / ".config" / "meet-pants" / "config.yaml"
+# The OS's place for app settings: ~/Library/Application Support/meet-pants on
+# macOS, %APPDATA%\meet-pants on Windows, ~/.config/meet-pants on Linux.
+DEFAULT_CONFIG_PATH = user_config_path("meet-pants", appauthor=False) / "config.yaml"
+LEGACY_CONFIG_PATH = Path.home() / ".config" / "meet-pants" / "config.yaml"  # before 2026-10
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_MODELS_DIR = PROJECT_ROOT / "models"
 DEFAULT_GARMENTS_DIR = PROJECT_ROOT / "garments"
@@ -161,3 +165,19 @@ def load_config(path: Path | None = None, overrides: dict[str, Any] | None = Non
     if config.mode not in MODES:
         raise ConfigError(f"mode must be one of {', '.join(MODES)}, got {config.mode!r}")
     return config
+
+
+def migrate_legacy_config(legacy: Path = LEGACY_CONFIG_PATH, current: Path = DEFAULT_CONFIG_PATH) -> bool:
+    """Move a config file from the old fixed location to the OS's settings folder.
+    Returns True if it moved. Does nothing if both are the same (Linux) or the new
+    file already exists."""
+    if legacy == current or not legacy.is_file() or current.exists():
+        return False
+    current.parent.mkdir(parents=True, exist_ok=True)
+    current.write_bytes(legacy.read_bytes())
+    legacy.unlink()
+    try:
+        legacy.parent.rmdir()  # only if empty
+    except OSError:
+        pass
+    return True

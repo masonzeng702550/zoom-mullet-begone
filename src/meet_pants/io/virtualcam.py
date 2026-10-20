@@ -23,12 +23,15 @@ class VirtualCam:
                 "Or run with --no-vcam to only use the preview."
             ) from e
         self.device = self._cam.device
+        self._closed = False
 
     def send(self, bgr: np.ndarray) -> None:
         self._cam.send(bgr)
 
     def close(self) -> None:
-        self._cam.close()
+        if not self._closed:  # the background service closes it early to probe for viewers
+            self._closed = True
+            self._cam.close()
 
     def __enter__(self) -> VirtualCam:
         return self

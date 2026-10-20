@@ -55,6 +55,11 @@
   .custom input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 36px; }
   .dot.picker { background: conic-gradient(red, yellow, lime, cyan, blue, magenta, red); }
   #status { min-height: 20px; color: var(--muted); font-size: 13px; }
+  .live { display: none; }
+  .live.on { display: block; }
+  .live img { width: 100%; border-radius: 10px; display: block; background: #000; aspect-ratio: 16 / 9; object-fit: contain; }
+  #service { color: var(--muted); font-size: 13px; margin: -16px 0 20px; }
+  #service:empty { display: none; }
   #status.error { color: var(--danger); }
 </style>
 </head>
@@ -62,6 +67,12 @@
 <main>
   <h1>褲子設定</h1>
   <p class="sub">選好後畫面會立刻換上，並存成下次啟動的預設值。</p>
+  <p id="service" role="status"></p>
+
+  <section class="live" id="live">
+    <h2>即時畫面</h2>
+    <img id="live-img" alt="會議軟體看到的畫面">
+  </section>
 
   <section>
     <div class="row">
@@ -107,6 +118,7 @@ function swatch(name, color, extraClass) {
 }
 
 function render() {
+  $("service").textContent = state.status || "";
   $("auto").checked = state.auto;
   $("manual").classList.toggle("off", state.auto);
 
@@ -172,6 +184,22 @@ async function send(change) {
 }
 
 $("auto").addEventListener("change", (e) => send({ auto: e.target.checked }));
+
+// Live preview of what the meeting app receives (only while the camera is in use).
+let liveUrl = null;
+async function refreshLive() {
+  if (document.hidden) return;
+  try {
+    const r = await fetch("/live.jpg");
+    if (r.status !== 200) { $("live").classList.remove("on"); return; }
+    const url = URL.createObjectURL(await r.blob());
+    $("live-img").src = url;
+    if (liveUrl) URL.revokeObjectURL(liveUrl);
+    liveUrl = url;
+    $("live").classList.add("on");
+  } catch (e) { $("live").classList.remove("on"); }
+}
+setInterval(refreshLive, 400);
 load().catch(() => show("連不上 meet-pants，請確認程式還在執行。", true));
 // Pick up changes made in the preview window (P / A keys, automatic matching).
 setInterval(() => load().catch(() => show("連不上 meet-pants，請確認程式還在執行。", true)), 2000);

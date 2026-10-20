@@ -7,9 +7,11 @@ plus debug overlays.
 from __future__ import annotations
 
 import sys
+import threading
 import time
+from collections.abc import Callable
 from contextlib import ExitStack
-from dataclasses import replace
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 
 import cv2
@@ -53,6 +55,23 @@ def _next_debug(current: DebugConfig) -> DebugConfig:
     except ValueError:
         return DEBUG_PRESETS[0]
     return DEBUG_PRESETS[(i + 1) % len(DEBUG_PRESETS)]
+
+
+@dataclass
+class RunControl:
+    """Hooks for running the pipeline under the background service."""
+
+    stop: threading.Event = field(default_factory=threading.Event)
+    # Shared settings; the service runs the settings page itself.
+    hub: SettingsHub | None = None
+    # Called with every output frame (the service makes the live preview from it).
+    on_frame: Callable[[np.ndarray], None] | None = None
+    # Called with the virtual camera closed after nobody has been in view for
+    # `probe_after_s` (repeated at that interval): True keeps running, False ends
+    # the run. Closing the output is how the service tells whether a meeting
+    # app still reads the camera; with nobody in view, the brief gap is harmless.
+    probe: Callable[[], bool] | None = None
+    probe_after_s: float = 60.0
 
 
 class Wardrobe:
@@ -145,9 +164,14 @@ def dress(
 
 
 def run(
-    config: Config, max_frames: int | None = None, record: Path | None = None, settings_path: Path | None = None
+    config: Config,
+    max_frames: int | None = None,
+    record: Path | None = None,
+    settings_path: Path | None = None,
+    control: RunControl | None = None,
 ) -> int:
-    """`settings_path`: config file the settings page saves to (None: changes are not saved)."""
+    """`settings_path`: config file the settings page saves to (None: changes are not saved).
+    `control`: hooks for the background service (see RunControl)."""
     # OpenCV splits even small per-frame jobs (the preview's color conversion,
     # resizes) across every core through GCD; the hand-off costs more than the
     # work: ~13 ms of CPU per preview frame instead of ~4, and a third of the
@@ -197,10 +221,15 @@ def run(
             stack.callback(recorder.release)
             print(f"record raw input -> {record}")
 
-        hub = SettingsHub(Path(config.garments_dir), choice, settings_path)
+        if control is not None and control.hub is not None:
+            hub = control.hub
+            choice = hub.choice
+            auto, matcher = apply_choice(choice, wardrobe, matcher)
+        else:
+            hub = SettingsHub(Path(config.garments_dir), choice, settings_path)
         seen_version = hub.version
         settings = None
-        if config.settings_port and (vcam is not None or config.preview):
+        if config.settings_port and (vcam is not None or config.preview) and (control is None or control.hub is None):
             try:
                 settings = stack.enter_context(SettingsServer(hub, config.settings_port))
                 print(f"settings page: {settings.url}")
@@ -216,8 +245,9 @@ def run(
         mode = config.mode
         debug = config.debug
         stats = Stats()
-        auto = matcher is not None
+        auto = hub.choice.auto
         legs_in_view = True
+        person_seen = last_probe = time.perf_counter()
         raw_pose: PoseFrame | None = None
         frames = detected = dressed = 0
         sources: dict[str, int] = {}
@@ -229,6 +259,8 @@ def run(
 
         try:
             while max_frames is None or frames < max_frames:
+                if control is not None and control.stop.is_set():
+                    break
                 frame = source.read()
                 if frame is None:
                     if source.is_live:
@@ -279,6 +311,23 @@ def run(
 
                 if vcam is not None:
                     vcam.send(output)
+                if control is not None:
+                    if control.on_frame is not None:
+                        control.on_frame(output)
+                    now = time.perf_counter()
+                    if pose.detected:
+                        person_seen = now
+                    idle = now - max(person_seen, last_probe)
+                    if control.probe is not None and vcam is not None and idle >= control.probe_after_s:
+                        last_probe = now
+                        vcam.close()
+                        if not control.probe():
+                            break
+                        try:
+                            vcam = stack.enter_context(VirtualCam(width, height, source.fps))
+                        except VirtualCamError as e:
+                            print(f"virtual camera error: {e}", file=sys.stderr)
+                            return 1
 
                 now = time.perf_counter()
                 stats.update((now - last) * 1000, pose.inference_ms, render_ms)

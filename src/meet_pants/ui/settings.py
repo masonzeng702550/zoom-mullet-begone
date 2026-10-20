@@ -91,6 +91,18 @@ class SettingsHub:
         # with the pipeline's wardrobe
         self._garments: dict[str, tuple[str, np.ndarray]] = {}
         self._thumbs: dict[tuple[str, str], bytes] = {}
+        # set by the background service: what it is doing, and a small JPEG of
+        # the latest output frame for the page's live preview
+        self.status = ""
+        self._preview: bytes | None = None
+
+    def set_preview(self, jpeg: bytes | None) -> None:
+        with self._lock:
+            self._preview = jpeg
+
+    def preview(self) -> bytes | None:
+        with self._lock:
+            return self._preview
 
     @property
     def choice(self) -> GarmentChoice:
@@ -141,6 +153,7 @@ class SettingsHub:
     def state(self) -> dict[str, Any]:
         return {
             **asdict(self.choice),
+            "status": self.status,
             "garments": [{"id": gid, "name": self._garment(gid)[0]} for gid in self.garment_ids],
             "presets": [{"name": n, "color": c} for n, c in PRESET_COLORS],
         }
@@ -181,6 +194,13 @@ def _handler(hub: SettingsHub) -> type[BaseHTTPRequestHandler]:
                 self._send(200, PAGE.read_bytes(), "text/html; charset=utf-8")
             elif url.path == "/api/settings":
                 self._json(200, hub.state())
+            elif url.path == "/live.jpg":
+                jpeg = hub.preview()
+                if jpeg is None:
+                    self.send_response(204)
+                    self.end_headers()
+                else:
+                    self._send(200, jpeg, "image/jpeg")
             elif url.path.startswith("/preview/") and url.path.endswith(".png"):
                 gid = url.path[len("/preview/") : -len(".png")]
                 color = parse_qs(url.query).get("color", [""])[0]

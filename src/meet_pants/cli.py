@@ -8,7 +8,7 @@ import threading
 from pathlib import Path
 from typing import Any
 
-from meet_pants.config import DEFAULT_CONFIG_PATH, MODES, Config, ConfigError, load_config
+from meet_pants.config import DEFAULT_CONFIG_PATH, MODES, Config, ConfigError, load_config, migrate_legacy_config
 
 DEBUG_LAYERS = ("landmarks", "masks", "mesh", "hud")
 
@@ -57,6 +57,11 @@ def build_parser() -> argparse.ArgumentParser:
         help=f"preview overlays, comma separated: {','.join(DEBUG_LAYERS)} or none",
     )
     parser.add_argument(
+        "--background",
+        action="store_true",
+        help="run from the menu bar: start the pants when a meeting app opens the virtual camera",
+    )
+    parser.add_argument(
         "--settings",
         action="store_true",
         help="only open the pants settings page (style, color, auto matching) without the camera",
@@ -99,6 +104,8 @@ def args_to_overrides(args: argparse.Namespace) -> dict[str, Any]:
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
+    if args.config is None and migrate_legacy_config():
+        print(f"moved settings to {DEFAULT_CONFIG_PATH}")
     try:
         config: Config = load_config(args.config, args_to_overrides(args))
     except ConfigError as e:
@@ -113,6 +120,12 @@ def main(argv: list[str] | None = None) -> int:
         if not model.exists():
             print(f"model not found: {model}\nrun: python scripts/download_models.py", file=sys.stderr)
             return 2
+
+    if args.background:
+        from meet_pants.service import BackgroundService
+        from meet_pants.ui.tray import run_tray
+
+        return run_tray(BackgroundService(config, settings_path))
 
     # Imported late so --help and config errors don't pay for loading mediapipe.
     from meet_pants.pipeline import run

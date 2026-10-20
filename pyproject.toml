@@ -10,6 +10,8 @@ dependencies = [
     "mediapipe>=1.1",
     "numpy>=2.0",
     "onnxruntime>=1.18",  # RTMPose fallback; rtmlib itself is not used (it pulls in opencv-python)
+    "platformdirs>=4.0",
+    "pystray>=0.19",  # menu bar icon for --background
     "pyvirtualcam>=0.15",
     "pyyaml>=6.0",
 ]
