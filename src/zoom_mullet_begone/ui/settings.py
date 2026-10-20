@@ -27,11 +27,11 @@ import cv2
 import numpy as np
 import yaml
 
-from meet_pants.render.garment import GarmentError, list_garments, load_garment, parse_color, recolor_texture
-from meet_pants.ui.browser_feed import FrameFeed, is_extension_request
+from zoom_mullet_begone.render.garment import GarmentError, list_garments, load_garment, parse_color, recolor_texture
+from zoom_mullet_begone.ui.browser_feed import FrameFeed, is_extension_request
 
 PAGE = Path(__file__).with_name("settings.html")
-MJPEG_BOUNDARY = "meetpantsframe"
+MJPEG_BOUNDARY = "zoommulletbegoneframe"
 THUMB_SIZE = (120, 180)  # w, h
 PRESET_COLORS = (
     ("黑", "#1c1c1c"),
@@ -237,7 +237,7 @@ def _handler(hub: SettingsHub) -> type[BaseHTTPRequestHandler]:
             if not is_extension_request(self.headers):
                 seen = {k: self.headers.get(k) for k in ("Origin", "Sec-Fetch-Site", "Sec-Fetch-Mode")}
                 print(f"browser stream refused, not from the extension: {seen}", file=sys.stderr)
-                self._send(403, b"only the meet-pants browser extension may read the stream", "text/plain")
+                self._send(403, b"only the zoom-mullet-begone browser extension may read the stream", "text/plain")
                 return
             print("browser stream: a tab connected")
             self.send_response(200)

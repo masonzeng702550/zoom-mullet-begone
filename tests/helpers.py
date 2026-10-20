@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from meet_pants.perception.types import NUM_LANDMARKS, Landmark, Lm, PoseFrame
+from zoom_mullet_begone.perception.types import NUM_LANDMARKS, Landmark, Lm, PoseFrame
 
 
 def make_pose(

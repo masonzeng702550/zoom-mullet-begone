@@ -1,8 +1,10 @@
-# meet-pants
+# Zoom Mullet Begone
 
 **English** | [繁體中文](README.zh-TW.md) | [日本語](README.ja.md) | [한국어](README.ko.md)
 
-Virtual pants for video calls. meet-pants tracks your legs with a pose model, draws a pair of pants that follows them, and sends the result to a virtual camera that Google Meet, Zoom, Teams and other apps can select.
+> **Your Zoom mullet, begone.** Business on top, business on the bottom. (Formerly *meet-pants*.)
+
+Virtual pants for video calls. zoom-mullet-begone tracks your legs with a pose model, draws a pair of pants that follows them, and sends the result to a virtual camera that Google Meet, Zoom, Teams and other apps can select.
 
 ## Features
 
@@ -11,7 +13,7 @@ Virtual pants for video calls. meet-pants tracks your legs with a pose model, dr
 - **Works up close**: when you sit so close that only your waist and legs are in view, a second pose model takes over.
 - **Matches your shirt**: picks the pants style and color that go with your top, or use the one you choose.
 - **Settings page**: pick the style and color in a local web page, with a live view of what the meeting sees.
-- **Browser extension**: adds a "meet-pants" camera to Google Meet and other websites in Chrome, Edge or Arc, with no camera driver to install.
+- **Browser extension**: adds a "zoom-mullet-begone" camera to Google Meet and other websites in Chrome, Edge or Arc, with no camera driver to install.
 - **Background mode**: lives in the menu bar and turns on only while a meeting uses the camera.
 
 Three garments are included: navy dress trousers, khaki chinos and indigo jeans. Any of them can be recolored.
@@ -19,7 +21,7 @@ Three garments are included: navy dress trousers, khaki chinos and indigo jeans.
 ## Status
 
 - Developed and tested on macOS (Apple silicon). The browser extension has been tested in Google Meet.
-- Windows and Linux should work, but they have not been tested yet. On them, background mode knows when a browser tab uses the meet-pants camera, but not when a desktop app opens a virtual camera.
+- Windows and Linux should work, but they have not been tested yet. On them, background mode knows when a browser tab uses the zoom-mullet-begone camera, but not when a desktop app opens a virtual camera.
 - The browser extension works in Chromium-based browsers (Chrome, Edge, Arc, Brave). Safari and Firefox are not supported yet.
 - The pants are always on while your hips are in view. Automatic detection of "not wearing pants" is planned.
 
@@ -29,7 +31,7 @@ Three garments are included: navy dress trousers, khaki chinos and indigo jeans.
 - A way to get the video into your meeting, one or both of:
   - **The browser extension** (web meetings such as Google Meet; nothing else to install): see [Browser extension](#browser-extension-no-obs).
   - **A virtual camera driver** (every app, including Zoom and Teams desktop apps):
-    - **macOS / Windows**: [OBS Studio](https://obsproject.com/) 30 or newer. Open it once, click **Start Virtual Camera**, then quit OBS. meet-pants uses the camera driver OBS installs; OBS itself does not need to run.
+    - **macOS / Windows**: [OBS Studio](https://obsproject.com/) 30 or newer. Open it once, click **Start Virtual Camera**, then quit OBS. zoom-mullet-begone uses the camera driver OBS installs; OBS itself does not need to run.
     - **Linux**: [v4l2loopback](https://github.com/umlaeute/v4l2loopback) (`sudo modprobe v4l2loopback exclusive_caps=1` so Chrome lists it).
 
 ## Setup
@@ -49,22 +51,22 @@ On macOS the first run asks for camera access for your terminal app.
 **Background mode (macOS, recommended):**
 
 ```bash
-.venv/bin/python -m meet_pants --background
+.venv/bin/python -m zoom_mullet_begone --background
 ```
 
-A pants icon appears in the menu bar. Join a meeting and choose **meet-pants** (browser extension) or **OBS Virtual Camera** as the camera; the pants appear about 3.5 seconds later.
+A pants icon appears in the menu bar. Join a meeting and choose **Zoom Mullet Begone** (browser extension) or **OBS Virtual Camera** as the camera; the pants appear about 3.5 seconds later.
 
 **Foreground mode (all systems):**
 
 ```bash
-.venv/bin/python -m meet_pants
+.venv/bin/python -m zoom_mullet_begone
 ```
 
 This opens a preview window and sends the video to the virtual camera right away.
 
 ## Browser extension (no OBS)
 
-The extension in `browser-extension/` adds a camera named **meet-pants** to every website. Pick it in Google Meet (or any other site) and the site receives meet-pants' video. No virtual camera driver is needed, so this works without OBS.
+The extension in `browser-extension/` adds a camera named **Zoom Mullet Begone** to every website. Pick it in Google Meet (or any other site) and the site receives zoom-mullet-begone' video. No virtual camera driver is needed, so this works without OBS.
 
 **Install (Chrome, Edge, Arc, Brave):**
 
@@ -74,44 +76,44 @@ The extension in `browser-extension/` adds a camera named **meet-pants** to ever
 
 **Use:**
 
-1. Start meet-pants, preferably in background mode: `.venv/bin/python -m meet_pants --background`.
-2. In Google Meet: Settings → Video → Camera → **meet-pants**. Other sites list it wherever you choose a camera.
-3. The extension's toolbar button shows whether meet-pants is running and links to the settings page.
+1. Start zoom-mullet-begone, preferably in background mode: `.venv/bin/python -m zoom_mullet_begone --background`.
+2. In Google Meet: Settings → Video → Camera → **Zoom Mullet Begone**. Other sites list it wherever you choose a camera.
+3. The extension's toolbar button shows whether zoom-mullet-begone is running and links to the settings page.
 
 **Privacy and safety:**
 
-- A site gets the meet-pants camera only if it already has permission to use your camera, exactly like a real camera.
-- The video goes from meet-pants to the browser over 127.0.0.1 and never leaves your computer. meet-pants accepts that connection only from browser extensions, recognized by request headers that web pages cannot set (`Sec-Fetch-Site`, or an extension `Origin`), so a website cannot read your camera through it.
-- In background mode meet-pants starts when a tab picks the meet-pants camera and stops about 3 seconds after the tab releases it.
+- A site gets the zoom-mullet-begone camera only if it already has permission to use your camera, exactly like a real camera.
+- The video goes from zoom-mullet-begone to the browser over 127.0.0.1 and never leaves your computer. zoom-mullet-begone accepts that connection only from browser extensions, recognized by request headers that web pages cannot set (`Sec-Fetch-Site`, or an extension `Origin`), so a website cannot read your camera through it.
+- In background mode zoom-mullet-begone starts when a tab picks the zoom-mullet-begone camera and stops about 3 seconds after the tab releases it.
 
 Desktop apps (Zoom, Teams, FaceTime) cannot see the extension's camera; for them you still need the virtual camera driver.
 
-**If the picture says 找不到 meet-pants (meet-pants not found)**, meet-pants is not running or is using another port. Start it; the tab reconnects by itself within 2 seconds. When the tab connects, the terminal prints `browser stream: a tab connected`.
+**If the picture says 找不到 Zoom Mullet Begone (zoom-mullet-begone not found)**, zoom-mullet-begone is not running or is using another port. Start it; the tab reconnects by itself within 2 seconds. When the tab connects, the terminal prints `browser stream: a tab connected`.
 
 ## Using it in meetings and websites
 
-With the virtual camera driver, meet-pants sends its video to **OBS Virtual Camera**, which the system lists as a normal camera next to the built-in one. Anything that lets you pick a camera can use it:
+With the virtual camera driver, zoom-mullet-begone sends its video to **OBS Virtual Camera**, which the system lists as a normal camera next to the built-in one. Anything that lets you pick a camera can use it:
 
 - **Google Meet** (any browser): Settings → Video → Camera → *OBS Virtual Camera*.
 - **Other websites in Chrome, Edge or Arc**: use the camera icon in the address bar, or choose it once for all sites at `chrome://settings/content/camera`.
 - **Safari and Firefox**: they ask per site; pick *OBS Virtual Camera* in the camera prompt or the site settings.
 - **Zoom, Teams, FaceTime, Discord, Slack**: choose *OBS Virtual Camera* in the app's video settings.
 
-meet-pants cannot take over apps that keep using the built-in camera: macOS lets every app open the real camera directly and offers no way to replace it system-wide. When meet-pants is not running, the virtual camera shows the OBS placeholder image.
+zoom-mullet-begone cannot take over apps that keep using the built-in camera: macOS lets every app open the real camera directly and offers no way to replace it system-wide. When zoom-mullet-begone is not running, the virtual camera shows the OBS placeholder image.
 
 ## Background mode
 
 ```bash
-.venv/bin/python -m meet_pants --background
+.venv/bin/python -m zoom_mullet_begone --background
 ```
 
 The menu bar icon is outlined while waiting and filled while in use.
 
-- **Waiting**: the camera is off and almost nothing runs (about 0% CPU). Twice a second meet-pants checks whether a browser tab picked the meet-pants camera, and on macOS whether an app opened *OBS Virtual Camera* (through CoreMediaIO).
-- **A meeting opens the camera**: meet-pants turns on your camera, and the pants appear about 3.5 seconds later.
-- **A browser tab releases the camera**: meet-pants stops about 3 seconds later. A run started by a browser tab does not touch OBS Virtual Camera.
-- **A desktop app closes OBS Virtual Camera**: meet-pants' own video keeps the virtual camera marked as "in use", so it cannot see this directly. After nobody has been in front of the camera for a minute, it stops sending for a moment and checks again. If no app is reading the camera, it turns your camera off and goes back to waiting. If you stay at your desk after the meeting, it keeps running until you leave, quit it, or turn off auto start in the menu.
-- **Menu**: the current status, 開啟設定… (open settings), 會議開鏡頭時自動套用 (auto start when a meeting opens the camera) and 結束 meet-pants (quit).
+- **Waiting**: the camera is off and almost nothing runs (about 0% CPU). Twice a second zoom-mullet-begone checks whether a browser tab picked the zoom-mullet-begone camera, and on macOS whether an app opened *OBS Virtual Camera* (through CoreMediaIO).
+- **A meeting opens the camera**: zoom-mullet-begone turns on your camera, and the pants appear about 3.5 seconds later.
+- **A browser tab releases the camera**: zoom-mullet-begone stops about 3 seconds later. A run started by a browser tab does not touch OBS Virtual Camera.
+- **A desktop app closes OBS Virtual Camera**: zoom-mullet-begone' own video keeps the virtual camera marked as "in use", so it cannot see this directly. After nobody has been in front of the camera for a minute, it stops sending for a moment and checks again. If no app is reading the camera, it turns your camera off and goes back to waiting. If you stay at your desk after the meeting, it keeps running until you leave, quit it, or turn off auto start in the menu.
+- **Menu**: the current status, 開啟設定… (open settings), 會議開鏡頭時自動套用 (auto start when a meeting opens the camera) and 結束 zoom-mullet-begone (quit).
 
 On Windows and Linux, background mode cannot yet tell when a desktop app opens the virtual camera: with a virtual camera driver installed it runs all the time; without one it serves only the browser extension and starts and stops with your tabs.
 
@@ -119,14 +121,14 @@ Each run happens in a separate process that exits when the run ends, so memory u
 
 ## Settings page
 
-While meet-pants runs, open `http://127.0.0.1:8765/`, press `S` in the preview, or choose 開啟設定… in the menu bar. You can:
+While zoom-mullet-begone runs, open `http://127.0.0.1:8765/`, press `S` in the preview, or choose 開啟設定… in the menu bar. You can:
 
 - choose the style: khaki chinos, navy dress trousers or jeans;
 - choose the color: the garment's own color, a preset, or any color from the color picker (the fabric keeps its shading, weave and folds);
 - turn shirt matching on or off;
 - see a live view of what the meeting receives (background mode).
 
-Changes show up on screen immediately and are saved as the default for next time. `python -m meet_pants --settings` opens the page without starting the camera.
+Changes show up on screen immediately and are saved as the default for next time. `python -m zoom_mullet_begone --settings` opens the page without starting the camera.
 
 The settings page and the menu bar are in Traditional Chinese for now. The page listens only on 127.0.0.1 and accepts changes only from itself, so other websites cannot change your settings. Set `settings_port: 0` in the config file to turn it off.
 
@@ -158,11 +160,11 @@ Settings are read from a YAML file in the system's settings folder:
 
 | System | Location |
 |---|---|
-| macOS | `~/Library/Application Support/meet-pants/config.yaml` |
-| Windows | `%APPDATA%\meet-pants\config.yaml` |
-| Linux | `~/.config/meet-pants/config.yaml` |
+| macOS | `~/Library/Application Support/zoom-mullet-begone/config.yaml` |
+| Windows | `%APPDATA%\zoom-mullet-begone\config.yaml` |
+| Linux | `~/.config/zoom-mullet-begone/config.yaml` |
 
-Command-line options override the file. An older `~/.config/meet-pants/config.yaml` on macOS or Windows is moved to the new location automatically. Example:
+Command-line options override the file. Settings from earlier versions (when the project was called meet-pants) are moved to the new location automatically. Example:
 
 ```yaml
 garment: chino_khaki

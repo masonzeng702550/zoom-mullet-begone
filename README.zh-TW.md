@@ -1,8 +1,10 @@
-# meet-pants
+# Zoom Mullet Begone
 
 [English](README.md) | **繁體中文** | [日本語](README.ja.md) | [한국어](README.ko.md)
 
-視訊會議用的虛擬褲子。meet-pants 用姿勢模型追蹤你的腿，畫上一條跟著腿動的褲子，再把畫面送到虛擬鏡頭，讓 Google Meet、Zoom、Teams 等軟體選用。
+> **Zoom mullet，退散！** 上半身正式，下半身也正式。（舊名 *meet-pants*。）
+
+視訊會議用的虛擬褲子。zoom-mullet-begone 用姿勢模型追蹤你的腿，畫上一條跟著腿動的褲子，再把畫面送到虛擬鏡頭，讓 Google Meet、Zoom、Teams 等軟體選用。
 
 ## 功能
 
@@ -11,7 +13,7 @@
 - **近距離也能用**：坐得很近、畫面只拍到腰和腿時，會改用第二個姿勢模型。
 - **依上衣搭配**：自動挑選跟上衣搭配的褲子樣式和顏色，也可以自己指定。
 - **設定頁**：在本機網頁上選樣式和顏色，還能看到會議那頭收到的即時畫面。
-- **瀏覽器擴充功能**：在 Chrome、Edge、Arc 的 Google Meet 和其他網站加入一個「meet-pants」鏡頭，不需要安裝任何鏡頭驅動。
+- **瀏覽器擴充功能**：在 Chrome、Edge、Arc 的 Google Meet 和其他網站加入一個「Zoom Mullet Begone」鏡頭，不需要安裝任何鏡頭驅動。
 - **背景模式**：常駐在選單列，只有在會議使用鏡頭時才啟動。
 
 內建三種褲子：深藍西裝褲、卡其褲、牛仔褲，每一種都可以換顏色。
@@ -19,7 +21,7 @@
 ## 目前狀態
 
 - 在 macOS（Apple 晶片）上開發和測試。瀏覽器擴充功能已在 Google Meet 實測可用。
-- Windows 和 Linux 應該可以使用，但還沒實測。在這兩個系統上，背景模式能得知瀏覽器分頁何時使用 meet-pants 鏡頭，但還無法得知桌面軟體何時打開虛擬鏡頭。
+- Windows 和 Linux 應該可以使用，但還沒實測。在這兩個系統上，背景模式能得知瀏覽器分頁何時使用 zoom-mullet-begone 鏡頭，但還無法得知桌面軟體何時打開虛擬鏡頭。
 - 瀏覽器擴充功能支援以 Chromium 為基礎的瀏覽器（Chrome、Edge、Arc、Brave），目前還不支援 Safari 和 Firefox。
 - 只要畫面中看得到髖部就會畫上褲子。自動判斷「有沒有穿褲子」還在規劃中。
 
@@ -29,7 +31,7 @@
 - 把畫面送進會議的方式，以下擇一或兩者都用：
   - **瀏覽器擴充功能**（Google Meet 等網頁會議，不需要另外安裝東西）：見下方「瀏覽器擴充功能（不需要 OBS）」一節。
   - **虛擬鏡頭驅動**（所有軟體，包括 Zoom、Teams 桌面版）：
-    - **macOS / Windows**：[OBS Studio](https://obsproject.com/) 30 以上。打開一次 OBS，按「啟動虛擬攝影機」（Start Virtual Camera），再關掉 OBS。meet-pants 使用的是 OBS 安裝的鏡頭驅動，平常不需要開著 OBS。
+    - **macOS / Windows**：[OBS Studio](https://obsproject.com/) 30 以上。打開一次 OBS，按「啟動虛擬攝影機」（Start Virtual Camera），再關掉 OBS。zoom-mullet-begone 使用的是 OBS 安裝的鏡頭驅動，平常不需要開著 OBS。
     - **Linux**：[v4l2loopback](https://github.com/umlaeute/v4l2loopback)（用 `sudo modprobe v4l2loopback exclusive_caps=1` 載入，Chrome 才會列出它）。
 
 ## 安裝
@@ -49,22 +51,22 @@ macOS 第一次執行時，系統會詢問是否允許終端機使用鏡頭。
 **背景模式（macOS，建議使用）：**
 
 ```bash
-.venv/bin/python -m meet_pants --background
+.venv/bin/python -m zoom_mullet_begone --background
 ```
 
-選單列會出現一個褲子圖示。進入會議後把鏡頭選成「meet-pants」（瀏覽器擴充功能）或「OBS Virtual Camera」，大約 3.5 秒後就會出現褲子。
+選單列會出現一個褲子圖示。進入會議後把鏡頭選成「Zoom Mullet Begone」（瀏覽器擴充功能）或「OBS Virtual Camera」，大約 3.5 秒後就會出現褲子。
 
 **前景模式（所有系統）：**
 
 ```bash
-.venv/bin/python -m meet_pants
+.venv/bin/python -m zoom_mullet_begone
 ```
 
 會開啟預覽視窗，並立刻把畫面送到虛擬鏡頭。
 
 ## 瀏覽器擴充功能（不需要 OBS）
 
-`browser-extension/` 裡的擴充功能會在每個網站加入一個名為「meet-pants」的鏡頭。在 Google Meet（或其他網站）選擇它，網站就會收到 meet-pants 的畫面。因為不需要虛擬鏡頭驅動，沒有安裝 OBS 也能使用。
+`browser-extension/` 裡的擴充功能會在每個網站加入一個名為「Zoom Mullet Begone」的鏡頭。在 Google Meet（或其他網站）選擇它，網站就會收到 zoom-mullet-begone 的畫面。因為不需要虛擬鏡頭驅動，沒有安裝 OBS 也能使用。
 
 **安裝（Chrome、Edge、Arc、Brave）：**
 
@@ -74,44 +76,44 @@ macOS 第一次執行時，系統會詢問是否允許終端機使用鏡頭。
 
 **使用：**
 
-1. 啟動 meet-pants，建議用背景模式：`.venv/bin/python -m meet_pants --background`。
-2. 在 Google Meet：設定 → 視訊 → 攝影機 → **meet-pants**。其他網站在選擇鏡頭的地方也會看到它。
-3. 工具列上的擴充功能按鈕會顯示 meet-pants 是否在執行，並提供設定頁的連結。
+1. 啟動 zoom-mullet-begone，建議用背景模式：`.venv/bin/python -m zoom_mullet_begone --background`。
+2. 在 Google Meet：設定 → 視訊 → 攝影機 → **Zoom Mullet Begone**。其他網站在選擇鏡頭的地方也會看到它。
+3. 工具列上的擴充功能按鈕會顯示 zoom-mullet-begone 是否在執行，並提供設定頁的連結。
 
 **隱私與安全：**
 
-- 只有已經取得鏡頭權限的網站才能使用 meet-pants 鏡頭，規則和實體鏡頭完全一樣。
-- 畫面經由 127.0.0.1 從 meet-pants 傳到瀏覽器，不會離開你的電腦。meet-pants 只接受來自瀏覽器擴充功能的連線（依據網頁無法設定的請求標頭判斷：`Sec-Fetch-Site`，或擴充功能的 `Origin`），所以網站無法透過它讀取你的鏡頭。
-- 在背景模式下，分頁選用 meet-pants 鏡頭時就會啟動，分頁停止使用後約 3 秒停止。
+- 只有已經取得鏡頭權限的網站才能使用 zoom-mullet-begone 鏡頭，規則和實體鏡頭完全一樣。
+- 畫面經由 127.0.0.1 從 zoom-mullet-begone 傳到瀏覽器，不會離開你的電腦。zoom-mullet-begone 只接受來自瀏覽器擴充功能的連線（依據網頁無法設定的請求標頭判斷：`Sec-Fetch-Site`，或擴充功能的 `Origin`），所以網站無法透過它讀取你的鏡頭。
+- 在背景模式下，分頁選用 zoom-mullet-begone 鏡頭時就會啟動，分頁停止使用後約 3 秒停止。
 
 桌面軟體（Zoom、Teams、FaceTime）看不到擴充功能提供的鏡頭，仍然需要虛擬鏡頭驅動。
 
-**如果畫面顯示「找不到 meet-pants」**，代表 meet-pants 沒有在執行，或使用了別的連接埠。啟動它之後，分頁會在 2 秒內自動重新連線。分頁連上時，終端機會印出 `browser stream: a tab connected`。
+**如果畫面顯示「找不到 Zoom Mullet Begone」**，代表 zoom-mullet-begone 沒有在執行，或使用了別的連接埠。啟動它之後，分頁會在 2 秒內自動重新連線。分頁連上時，終端機會印出 `browser stream: a tab connected`。
 
 ## 在會議和網站中使用
 
-使用虛擬鏡頭驅動時，meet-pants 把畫面送到「OBS Virtual Camera」，系統會把它當成一般鏡頭，跟內建鏡頭一起列出。只要能選擇鏡頭的地方都能使用：
+使用虛擬鏡頭驅動時，zoom-mullet-begone 把畫面送到「OBS Virtual Camera」，系統會把它當成一般鏡頭，跟內建鏡頭一起列出。只要能選擇鏡頭的地方都能使用：
 
 - **Google Meet**（任何瀏覽器）：設定 → 視訊 → 攝影機 → OBS Virtual Camera。
 - **Chrome、Edge、Arc 上的其他網站**：點網址列的鏡頭圖示選擇，或在 `chrome://settings/content/camera` 一次設定給所有網站。
 - **Safari 和 Firefox**：每個網站分別詢問，在鏡頭提示或網站設定中選 OBS Virtual Camera。
 - **Zoom、Teams、FaceTime、Discord、Slack**：在各軟體的視訊設定中選 OBS Virtual Camera。
 
-如果某個軟體一直使用內建鏡頭，meet-pants 無法接管：macOS 允許每個軟體直接開啟實體鏡頭，也沒有辦法在整個系統層級把它換掉。meet-pants 沒有執行時，虛擬鏡頭會顯示 OBS 的預設畫面。
+如果某個軟體一直使用內建鏡頭，zoom-mullet-begone 無法接管：macOS 允許每個軟體直接開啟實體鏡頭，也沒有辦法在整個系統層級把它換掉。zoom-mullet-begone 沒有執行時，虛擬鏡頭會顯示 OBS 的預設畫面。
 
 ## 背景模式
 
 ```bash
-.venv/bin/python -m meet_pants --background
+.venv/bin/python -m zoom_mullet_begone --background
 ```
 
 選單列圖示在待命時是空心的，使用中是實心的。
 
-- **待命**：鏡頭關閉，幾乎不做任何事（CPU 約 0%）。每秒檢查兩次：有沒有瀏覽器分頁選用了 meet-pants 鏡頭，以及在 macOS 上有沒有軟體打開了 OBS Virtual Camera（透過 CoreMediaIO）。
-- **會議打開鏡頭**：meet-pants 打開你的鏡頭，大約 3.5 秒後出現褲子。
+- **待命**：鏡頭關閉，幾乎不做任何事（CPU 約 0%）。每秒檢查兩次：有沒有瀏覽器分頁選用了 zoom-mullet-begone 鏡頭，以及在 macOS 上有沒有軟體打開了 OBS Virtual Camera（透過 CoreMediaIO）。
+- **會議打開鏡頭**：zoom-mullet-begone 打開你的鏡頭，大約 3.5 秒後出現褲子。
 - **瀏覽器分頁停止使用鏡頭**：約 3 秒後停止。由瀏覽器分頁啟動的執行不會動到 OBS Virtual Camera。
-- **桌面軟體關閉 OBS Virtual Camera**：meet-pants 自己送出的畫面會讓虛擬鏡頭一直顯示為「使用中」，所以無法直接得知會議已經關閉。當鏡頭前連續一分鐘沒有人時，它會短暫停止送出畫面並重新檢查；如果已經沒有軟體在讀取鏡頭，就關閉鏡頭回到待命。如果會議結束後你還坐在電腦前，它會繼續執行，直到你離開畫面、結束程式，或在選單中關閉自動啟動。
-- **選單**：目前狀態、「開啟設定…」、「會議開鏡頭時自動套用」、「結束 meet-pants」。
+- **桌面軟體關閉 OBS Virtual Camera**：zoom-mullet-begone 自己送出的畫面會讓虛擬鏡頭一直顯示為「使用中」，所以無法直接得知會議已經關閉。當鏡頭前連續一分鐘沒有人時，它會短暫停止送出畫面並重新檢查；如果已經沒有軟體在讀取鏡頭，就關閉鏡頭回到待命。如果會議結束後你還坐在電腦前，它會繼續執行，直到你離開畫面、結束程式，或在選單中關閉自動啟動。
+- **選單**：目前狀態、「開啟設定…」、「會議開鏡頭時自動套用」、「結束 zoom-mullet-begone」。
 
 在 Windows 和 Linux 上，背景模式還無法得知桌面軟體何時打開虛擬鏡頭：有安裝虛擬鏡頭驅動時會一直執行；沒有安裝時只服務瀏覽器擴充功能，隨分頁啟動和停止。
 
@@ -119,14 +121,14 @@ macOS 第一次執行時，系統會詢問是否允許終端機使用鏡頭。
 
 ## 設定頁
 
-meet-pants 執行時，打開 `http://127.0.0.1:8765/`、在預覽視窗按 `S`，或在選單列選「開啟設定…」。可以：
+zoom-mullet-begone 執行時，打開 `http://127.0.0.1:8765/`、在預覽視窗按 `S`，或在選單列選「開啟設定…」。可以：
 
 - 選擇樣式：卡其褲、深藍西裝褲、牛仔褲；
 - 選擇顏色：褲子原本的顏色、預設色票，或用取色器選任何顏色（布料的明暗、紋理和皺褶都會保留）；
 - 開啟或關閉依上衣搭配；
 - 查看會議收到的即時畫面（背景模式）。
 
-修改會立刻顯示在畫面上，並存成下次啟動的預設值。`python -m meet_pants --settings` 可以在不開鏡頭的情況下只打開設定頁。
+修改會立刻顯示在畫面上，並存成下次啟動的預設值。`python -m zoom_mullet_begone --settings` 可以在不開鏡頭的情況下只打開設定頁。
 
 設定頁只在 127.0.0.1 上監聽，也只接受來自頁面本身的修改，其他網站無法更改你的設定。在設定檔中設定 `settings_port: 0` 可以關閉它。
 
@@ -158,11 +160,11 @@ meet-pants 執行時，打開 `http://127.0.0.1:8765/`、在預覽視窗按 `S`�
 
 | 系統 | 位置 |
 |---|---|
-| macOS | `~/Library/Application Support/meet-pants/config.yaml` |
-| Windows | `%APPDATA%\meet-pants\config.yaml` |
-| Linux | `~/.config/meet-pants/config.yaml` |
+| macOS | `~/Library/Application Support/zoom-mullet-begone/config.yaml` |
+| Windows | `%APPDATA%\zoom-mullet-begone\config.yaml` |
+| Linux | `~/.config/zoom-mullet-begone/config.yaml` |
 
-指令列參數會覆蓋設定檔。macOS 和 Windows 上舊位置的 `~/.config/meet-pants/config.yaml` 會自動搬到新位置。範例：
+指令列參數會覆蓋設定檔。舊版本（專案還叫 meet-pants 時）的設定會自動搬到新位置。範例：
 
 ```yaml
 garment: chino_khaki

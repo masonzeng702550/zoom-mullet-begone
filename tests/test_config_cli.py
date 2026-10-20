@@ -4,12 +4,12 @@ from pathlib import Path
 
 import pytest
 
-from meet_pants import cli
-from meet_pants.config import Config, ConfigError, load_config, parse_input
+from zoom_mullet_begone import cli
+from zoom_mullet_begone.config import Config, ConfigError, load_config, parse_input
 
 
 def test_defaults_when_no_file(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr("meet_pants.config.DEFAULT_CONFIG_PATH", tmp_path / "missing.yaml")
+    monkeypatch.setattr("zoom_mullet_begone.config.DEFAULT_CONFIG_PATH", tmp_path / "missing.yaml")
     assert load_config() == Config()
 
 
@@ -91,10 +91,10 @@ def test_explicit_garment_turns_off_auto_matching() -> None:
 
 
 def test_legacy_config_moves_to_the_os_settings_folder(tmp_path: Path) -> None:
-    from meet_pants.config import migrate_legacy_config
+    from zoom_mullet_begone.config import migrate_legacy_config
 
     legacy = tmp_path / "old" / "meet-pants" / "config.yaml"
-    current = tmp_path / "new" / "meet-pants" / "config.yaml"
+    current = tmp_path / "new" / "zoom-mullet-begone" / "config.yaml"
     legacy.parent.mkdir(parents=True)
     legacy.write_text("garment: jeans_indigo\n", encoding="utf-8")
     assert migrate_legacy_config(legacy, current) is True
@@ -107,3 +107,19 @@ def test_legacy_config_moves_to_the_os_settings_folder(tmp_path: Path) -> None:
     legacy.write_text("garment: chino_khaki\n", encoding="utf-8")
     assert migrate_legacy_config(legacy, current) is False
     assert current.read_text(encoding="utf-8") == "garment: jeans_indigo\n"
+
+
+def test_newest_legacy_config_wins(tmp_path: Path) -> None:
+    """Settings from the meet-pants era: the platformdirs folder beats ~/.config."""
+    from zoom_mullet_begone.config import migrate_legacy_config
+
+    newer = tmp_path / "Application Support" / "meet-pants" / "config.yaml"
+    older = tmp_path / ".config" / "meet-pants" / "config.yaml"
+    current = tmp_path / "Application Support" / "zoom-mullet-begone" / "config.yaml"
+    for path, garment in ((newer, "jeans_indigo"), (older, "chino_khaki")):
+        path.parent.mkdir(parents=True)
+        path.write_text(f"garment: {garment}\n", encoding="utf-8")
+    assert migrate_legacy_config((newer, older), current) is True
+    assert current.read_text(encoding="utf-8") == "garment: jeans_indigo\n"
+    assert not newer.exists() and older.exists()
+    assert migrate_legacy_config((newer, older), current) is False  # never overwrites

@@ -1,4 +1,4 @@
-"""Command-line entry point: python -m meet_pants"""
+"""Command-line entry point: python -m zoom_mullet_begone"""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ import threading
 from pathlib import Path
 from typing import Any
 
-from meet_pants.config import DEFAULT_CONFIG_PATH, MODES, Config, ConfigError, load_config, migrate_legacy_config
+from zoom_mullet_begone.config import DEFAULT_CONFIG_PATH, MODES, Config, ConfigError, load_config, migrate_legacy_config
 
 DEBUG_LAYERS = ("landmarks", "masks", "mesh", "hud")
 
@@ -31,7 +31,7 @@ def _debug_layers(text: str) -> list[str]:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        prog="meet-pants",
+        prog="zoom-mullet-begone",
         description="Skeleton-tracked virtual pants for video calls.",
     )
     parser.add_argument("--input", "-i", help="camera index or video file path (default 0)")
@@ -122,27 +122,27 @@ def main(argv: list[str] | None = None) -> int:
             return 2
 
     if args.background:
-        from meet_pants.service import BackgroundService
-        from meet_pants.ui.tray import run_tray
+        from zoom_mullet_begone.service import BackgroundService
+        from zoom_mullet_begone.ui.tray import run_tray
 
         return run_tray(BackgroundService(config, settings_path))
 
     # Imported late so --help and config errors don't pay for loading mediapipe.
-    from meet_pants.pipeline import run
+    from zoom_mullet_begone.pipeline import run
 
     return run(config, max_frames=args.frames, record=args.record, settings_path=settings_path)
 
 
 def settings_only(config: Config, settings_path: Path) -> int:
     """Serve the settings page until Ctrl-C; choices are saved to `settings_path`."""
-    from meet_pants.ui.settings import GarmentChoice, SettingsHub, SettingsServer
+    from zoom_mullet_begone.ui.settings import GarmentChoice, SettingsHub, SettingsServer
 
     choice = GarmentChoice(config.garment, config.garment_color, config.garment_auto)
     hub = SettingsHub(Path(config.garments_dir), choice, settings_path)
     try:
         server = SettingsServer(hub, config.settings_port or 8765)
     except OSError as e:
-        print(f"cannot open the settings page: {e}\nis meet-pants already running? press S in its preview", file=sys.stderr)
+        print(f"cannot open the settings page: {e}\nis zoom-mullet-begone already running? press S in its preview", file=sys.stderr)
         return 1
     with server:
         print(f"settings page: {server.url}  (saved to {settings_path}; Ctrl-C to stop)")

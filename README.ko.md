@@ -1,8 +1,10 @@
-# meet-pants
+# Zoom Mullet Begone
 
 [English](README.md) | [繁體中文](README.zh-TW.md) | [日本語](README.ja.md) | **한국어**
 
-화상 회의용 가상 바지입니다. meet-pants는 자세 추정 모델로 다리를 추적해 다리 움직임을 따라가는 바지를 그리고, 그 영상을 가상 카메라로 보냅니다. Google Meet, Zoom, Teams 같은 앱에서 이 카메라를 선택해 사용할 수 있습니다.
+> **Zoom 멀릿, 물러가라!** 위도 비즈니스, 아래도 비즈니스. (예전 이름 *meet-pants*)
+
+화상 회의용 가상 바지입니다. zoom-mullet-begone는 자세 추정 모델로 다리를 추적해 다리 움직임을 따라가는 바지를 그리고, 그 영상을 가상 카메라로 보냅니다. Google Meet, Zoom, Teams 같은 앱에서 이 카메라를 선택해 사용할 수 있습니다.
 
 ## 기능
 
@@ -11,7 +13,7 @@
 - **가까이에서도 동작**: 카메라에 너무 가까이 앉아 허리와 다리만 보이면 다른 자세 추정 모델로 전환합니다.
 - **상의에 맞춘 코디**: 상의와 어울리는 바지 스타일과 색을 자동으로 고릅니다. 직접 지정할 수도 있습니다.
 - **설정 페이지**: 로컬 웹 페이지에서 스타일과 색을 고르고, 회의 상대에게 전송되는 화면을 실시간으로 볼 수 있습니다.
-- **브라우저 확장 프로그램**: Chrome, Edge, Arc의 Google Meet 등 웹사이트에 'meet-pants' 카메라를 추가합니다. 카메라 드라이버를 설치할 필요가 없습니다.
+- **브라우저 확장 프로그램**: Chrome, Edge, Arc의 Google Meet 등 웹사이트에 'Zoom Mullet Begone' 카메라를 추가합니다. 카메라 드라이버를 설치할 필요가 없습니다.
 - **백그라운드 모드**: 메뉴 막대에 상주하며, 회의가 카메라를 사용할 때만 동작합니다.
 
 바지는 세 가지(네이비 정장 바지, 카키 치노 팬츠, 인디고 청바지)가 포함되어 있고, 모두 색을 바꿀 수 있습니다.
@@ -19,7 +21,7 @@
 ## 현재 상태
 
 - macOS(Apple 실리콘)에서 개발하고 테스트했습니다. 브라우저 확장 프로그램은 Google Meet에서 동작을 확인했습니다.
-- Windows와 Linux에서도 동작할 것으로 보이지만, 아직 테스트하지 않았습니다. 이 운영체제들의 백그라운드 모드는 브라우저 탭이 meet-pants 카메라를 쓰는 것은 알 수 있지만, 데스크톱 앱이 가상 카메라를 여는 것은 아직 알 수 없습니다.
+- Windows와 Linux에서도 동작할 것으로 보이지만, 아직 테스트하지 않았습니다. 이 운영체제들의 백그라운드 모드는 브라우저 탭이 zoom-mullet-begone 카메라를 쓰는 것은 알 수 있지만, 데스크톱 앱이 가상 카메라를 여는 것은 아직 알 수 없습니다.
 - 브라우저 확장 프로그램은 Chromium 기반 브라우저(Chrome, Edge, Arc, Brave)에서 동작합니다. Safari와 Firefox는 아직 지원하지 않습니다.
 - 엉덩이가 화면에 보이는 동안에는 항상 바지를 그립니다. '바지를 입지 않은 상태'를 자동으로 감지하는 기능은 계획 중입니다.
 
@@ -29,7 +31,7 @@
 - 영상을 회의로 보내는 방법(하나 또는 둘 다):
   - **브라우저 확장 프로그램**(Google Meet 같은 웹 회의, 따로 설치할 것 없음): 아래의 '브라우저 확장 프로그램(OBS 불필요)'을 참고하세요.
   - **가상 카메라 드라이버**(Zoom, Teams 데스크톱 앱을 포함한 모든 앱):
-    - **macOS / Windows**: [OBS Studio](https://obsproject.com/) 30 이상. OBS를 한 번 열어 '가상 카메라 시작'(Start Virtual Camera)을 누른 뒤 OBS를 종료하세요. meet-pants는 OBS가 설치한 카메라 드라이버를 사용하므로, 평소에 OBS를 켜 둘 필요는 없습니다.
+    - **macOS / Windows**: [OBS Studio](https://obsproject.com/) 30 이상. OBS를 한 번 열어 '가상 카메라 시작'(Start Virtual Camera)을 누른 뒤 OBS를 종료하세요. zoom-mullet-begone는 OBS가 설치한 카메라 드라이버를 사용하므로, 평소에 OBS를 켜 둘 필요는 없습니다.
     - **Linux**: [v4l2loopback](https://github.com/umlaeute/v4l2loopback) (Chrome에 표시되도록 `sudo modprobe v4l2loopback exclusive_caps=1`로 불러옵니다).
 
 ## 설치
@@ -49,22 +51,22 @@ macOS에서는 처음 실행할 때 터미널 앱의 카메라 사용 권한을 
 **백그라운드 모드(macOS, 권장):**
 
 ```bash
-.venv/bin/python -m meet_pants --background
+.venv/bin/python -m zoom_mullet_begone --background
 ```
 
-메뉴 막대에 바지 아이콘이 나타납니다. 회의에 참여해 카메라로 'meet-pants'(브라우저 확장 프로그램) 또는 'OBS Virtual Camera'를 선택하면 약 3.5초 뒤에 바지가 나타납니다.
+메뉴 막대에 바지 아이콘이 나타납니다. 회의에 참여해 카메라로 'Zoom Mullet Begone'(브라우저 확장 프로그램) 또는 'OBS Virtual Camera'를 선택하면 약 3.5초 뒤에 바지가 나타납니다.
 
 **포그라운드 모드(모든 운영체제):**
 
 ```bash
-.venv/bin/python -m meet_pants
+.venv/bin/python -m zoom_mullet_begone
 ```
 
 미리보기 창이 열리고, 곧바로 가상 카메라로 영상을 보냅니다.
 
 ## 브라우저 확장 프로그램(OBS 불필요)
 
-`browser-extension/`의 확장 프로그램은 모든 웹사이트에 'meet-pants'라는 카메라를 추가합니다. Google Meet(또는 다른 사이트)에서 이 카메라를 고르면, 사이트가 meet-pants의 영상을 받습니다. 가상 카메라 드라이버가 필요 없으므로 OBS 없이도 사용할 수 있습니다.
+`browser-extension/`의 확장 프로그램은 모든 웹사이트에 'Zoom Mullet Begone'라는 카메라를 추가합니다. Google Meet(또는 다른 사이트)에서 이 카메라를 고르면, 사이트가 zoom-mullet-begone의 영상을 받습니다. 가상 카메라 드라이버가 필요 없으므로 OBS 없이도 사용할 수 있습니다.
 
 **설치(Chrome, Edge, Arc, Brave):**
 
@@ -74,44 +76,44 @@ macOS에서는 처음 실행할 때 터미널 앱의 카메라 사용 권한을 
 
 **사용 방법:**
 
-1. meet-pants를 실행합니다. 백그라운드 모드를 권장합니다: `.venv/bin/python -m meet_pants --background`.
-2. Google Meet에서 설정 → 동영상 → 카메라 → **meet-pants**를 고릅니다. 다른 사이트에서도 카메라를 고르는 곳에 나타납니다.
-3. 도구 모음의 확장 프로그램 버튼에서 meet-pants 실행 여부를 확인하고 설정 페이지를 열 수 있습니다.
+1. zoom-mullet-begone를 실행합니다. 백그라운드 모드를 권장합니다: `.venv/bin/python -m zoom_mullet_begone --background`.
+2. Google Meet에서 설정 → 동영상 → 카메라 → **Zoom Mullet Begone**를 고릅니다. 다른 사이트에서도 카메라를 고르는 곳에 나타납니다.
+3. 도구 모음의 확장 프로그램 버튼에서 zoom-mullet-begone 실행 여부를 확인하고 설정 페이지를 열 수 있습니다.
 
 **개인정보와 보안:**
 
-- meet-pants 카메라는 이미 카메라 사용 권한을 받은 사이트만 쓸 수 있습니다. 실제 카메라와 똑같습니다.
-- 영상은 127.0.0.1을 거쳐 meet-pants에서 브라우저로 전달되며, 이 컴퓨터 밖으로 나가지 않습니다. meet-pants는 브라우저 확장 프로그램의 연결만 받아들이므로(웹 페이지가 설정할 수 없는 요청 헤더, 즉 `Sec-Fetch-Site` 또는 확장 프로그램의 `Origin`으로 판단), 웹사이트가 이를 통해 카메라를 읽을 수 없습니다.
-- 백그라운드 모드에서는 탭이 meet-pants 카메라를 고르면 시작하고, 탭이 사용을 마치고 약 3초 뒤에 멈춥니다.
+- zoom-mullet-begone 카메라는 이미 카메라 사용 권한을 받은 사이트만 쓸 수 있습니다. 실제 카메라와 똑같습니다.
+- 영상은 127.0.0.1을 거쳐 zoom-mullet-begone에서 브라우저로 전달되며, 이 컴퓨터 밖으로 나가지 않습니다. zoom-mullet-begone는 브라우저 확장 프로그램의 연결만 받아들이므로(웹 페이지가 설정할 수 없는 요청 헤더, 즉 `Sec-Fetch-Site` 또는 확장 프로그램의 `Origin`으로 판단), 웹사이트가 이를 통해 카메라를 읽을 수 없습니다.
+- 백그라운드 모드에서는 탭이 zoom-mullet-begone 카메라를 고르면 시작하고, 탭이 사용을 마치고 약 3초 뒤에 멈춥니다.
 
 데스크톱 앱(Zoom, Teams, FaceTime)에서는 확장 프로그램의 카메라가 보이지 않으므로, 이런 앱에는 여전히 가상 카메라 드라이버가 필요합니다.
 
-**화면에 '找不到 meet-pants'(meet-pants를 찾을 수 없음)가 표시되면** meet-pants가 실행 중이 아니거나 다른 포트를 쓰고 있는 것입니다. meet-pants를 실행하면 탭이 2초 안에 자동으로 다시 연결됩니다. 탭이 연결되면 터미널에 `browser stream: a tab connected`가 출력됩니다.
+**화면에 '找不到 Zoom Mullet Begone'(zoom-mullet-begone를 찾을 수 없음)가 표시되면** zoom-mullet-begone가 실행 중이 아니거나 다른 포트를 쓰고 있는 것입니다. zoom-mullet-begone를 실행하면 탭이 2초 안에 자동으로 다시 연결됩니다. 탭이 연결되면 터미널에 `browser stream: a tab connected`가 출력됩니다.
 
 ## 회의와 웹사이트에서 사용하기
 
-가상 카메라 드라이버를 쓸 때 meet-pants는 영상을 'OBS Virtual Camera'로 보냅니다. 운영체제는 이것을 일반 카메라로 인식해 내장 카메라와 함께 보여 줍니다. 카메라를 고를 수 있는 곳이라면 어디서든 사용할 수 있습니다.
+가상 카메라 드라이버를 쓸 때 zoom-mullet-begone는 영상을 'OBS Virtual Camera'로 보냅니다. 운영체제는 이것을 일반 카메라로 인식해 내장 카메라와 함께 보여 줍니다. 카메라를 고를 수 있는 곳이라면 어디서든 사용할 수 있습니다.
 
 - **Google Meet**(모든 브라우저): 설정 → 동영상 → 카메라 → OBS Virtual Camera.
 - **Chrome, Edge, Arc의 다른 웹사이트**: 주소 표시줄의 카메라 아이콘에서 고르거나, `chrome://settings/content/camera`에서 모든 사이트에 한 번에 설정합니다.
 - **Safari와 Firefox**: 사이트마다 묻기 때문에, 카메라 확인 창이나 사이트 설정에서 OBS Virtual Camera를 고릅니다.
 - **Zoom, Teams, FaceTime, Discord, Slack**: 각 앱의 비디오 설정에서 OBS Virtual Camera를 고릅니다.
 
-내장 카메라를 계속 사용하는 앱은 meet-pants가 대신할 수 없습니다. macOS에서는 모든 앱이 실제 카메라를 직접 열 수 있고, 시스템 전체에서 카메라를 바꿔치기할 방법이 없기 때문입니다. meet-pants가 실행 중이 아닐 때는 가상 카메라에 OBS의 대기 화면이 표시됩니다.
+내장 카메라를 계속 사용하는 앱은 zoom-mullet-begone가 대신할 수 없습니다. macOS에서는 모든 앱이 실제 카메라를 직접 열 수 있고, 시스템 전체에서 카메라를 바꿔치기할 방법이 없기 때문입니다. zoom-mullet-begone가 실행 중이 아닐 때는 가상 카메라에 OBS의 대기 화면이 표시됩니다.
 
 ## 백그라운드 모드
 
 ```bash
-.venv/bin/python -m meet_pants --background
+.venv/bin/python -m zoom_mullet_begone --background
 ```
 
 메뉴 막대 아이콘은 대기 중에는 윤곽선만, 사용 중에는 채워진 모양으로 표시됩니다.
 
-- **대기 중**: 카메라가 꺼져 있고 거의 아무것도 실행되지 않습니다(CPU 약 0%). 1초에 두 번, 브라우저 탭이 meet-pants 카메라를 골랐는지, 그리고 macOS에서는 어떤 앱이 OBS Virtual Camera를 열었는지(CoreMediaIO로) 확인합니다.
-- **회의가 카메라를 열면**: meet-pants가 카메라를 켜고, 약 3.5초 뒤에 바지가 나타납니다.
+- **대기 중**: 카메라가 꺼져 있고 거의 아무것도 실행되지 않습니다(CPU 약 0%). 1초에 두 번, 브라우저 탭이 zoom-mullet-begone 카메라를 골랐는지, 그리고 macOS에서는 어떤 앱이 OBS Virtual Camera를 열었는지(CoreMediaIO로) 확인합니다.
+- **회의가 카메라를 열면**: zoom-mullet-begone가 카메라를 켜고, 약 3.5초 뒤에 바지가 나타납니다.
 - **브라우저 탭이 카메라 사용을 마치면**: 약 3초 뒤에 멈춥니다. 브라우저 탭으로 시작된 실행은 OBS Virtual Camera를 건드리지 않습니다.
-- **데스크톱 앱이 OBS Virtual Camera를 닫으면**: meet-pants가 보내는 영상 때문에 가상 카메라가 계속 '사용 중'으로 표시되므로, 이를 바로 알아낼 수는 없습니다. 카메라 앞에 1분 동안 아무도 없으면 잠깐 영상 전송을 멈추고 다시 확인합니다. 카메라를 읽는 앱이 없으면 카메라를 끄고 대기 상태로 돌아갑니다. 회의가 끝난 뒤에도 자리에 앉아 있으면, 자리를 뜨거나 종료하거나 메뉴에서 자동 시작을 끌 때까지 계속 실행됩니다.
-- **메뉴**: 현재 상태, '開啟設定…'(설정 열기), '會議開鏡頭時自動套用'(회의가 카메라를 열면 자동 시작), '結束 meet-pants'(종료).
+- **데스크톱 앱이 OBS Virtual Camera를 닫으면**: zoom-mullet-begone가 보내는 영상 때문에 가상 카메라가 계속 '사용 중'으로 표시되므로, 이를 바로 알아낼 수는 없습니다. 카메라 앞에 1분 동안 아무도 없으면 잠깐 영상 전송을 멈추고 다시 확인합니다. 카메라를 읽는 앱이 없으면 카메라를 끄고 대기 상태로 돌아갑니다. 회의가 끝난 뒤에도 자리에 앉아 있으면, 자리를 뜨거나 종료하거나 메뉴에서 자동 시작을 끌 때까지 계속 실행됩니다.
+- **메뉴**: 현재 상태, '開啟設定…'(설정 열기), '會議開鏡頭時自動套用'(회의가 카메라를 열면 자동 시작), '結束 zoom-mullet-begone'(종료).
 
 Windows와 Linux의 백그라운드 모드는 데스크톱 앱이 가상 카메라를 여는 시점을 아직 알 수 없습니다. 가상 카메라 드라이버가 있으면 항상 실행되고, 없으면 브라우저 확장 프로그램에만 영상을 보내며 탭에 맞춰 시작하고 멈춥니다.
 
@@ -119,14 +121,14 @@ Windows와 Linux의 백그라운드 모드는 데스크톱 앱이 가상 카메�
 
 ## 설정 페이지
 
-meet-pants가 실행 중일 때 `http://127.0.0.1:8765/`를 열거나, 미리보기 창에서 `S`를 누르거나, 메뉴 막대에서 '開啟設定…'을 고르세요. 다음을 할 수 있습니다.
+zoom-mullet-begone가 실행 중일 때 `http://127.0.0.1:8765/`를 열거나, 미리보기 창에서 `S`를 누르거나, 메뉴 막대에서 '開啟設定…'을 고르세요. 다음을 할 수 있습니다.
 
 - 스타일 선택: 카키 치노 팬츠, 네이비 정장 바지, 청바지
 - 색 선택: 원래 색, 미리 정해진 색, 또는 색상 선택기로 원하는 색(원단의 음영, 직조 무늬, 주름은 그대로 유지됩니다)
 - 상의에 맞추는 기능 켜기/끄기
 - 회의에 전송되는 화면 실시간 보기(백그라운드 모드)
 
-변경 사항은 곧바로 화면에 반영되고, 다음 실행 때의 기본값으로 저장됩니다. `python -m meet_pants --settings`를 쓰면 카메라를 켜지 않고 설정 페이지만 열 수 있습니다.
+변경 사항은 곧바로 화면에 반영되고, 다음 실행 때의 기본값으로 저장됩니다. `python -m zoom_mullet_begone --settings`를 쓰면 카메라를 켜지 않고 설정 페이지만 열 수 있습니다.
 
 설정 페이지와 메뉴 막대는 지금은 번체 중국어로만 제공됩니다. 설정 페이지는 127.0.0.1에서만 요청을 받고 페이지 자신이 보낸 변경만 받아들이므로, 다른 웹사이트가 설정을 바꿀 수 없습니다. 설정 파일에서 `settings_port: 0`으로 지정하면 꺼집니다.
 
@@ -158,11 +160,11 @@ meet-pants가 실행 중일 때 `http://127.0.0.1:8765/`를 열거나, 미리보
 
 | 운영체제 | 위치 |
 |---|---|
-| macOS | `~/Library/Application Support/meet-pants/config.yaml` |
-| Windows | `%APPDATA%\meet-pants\config.yaml` |
-| Linux | `~/.config/meet-pants/config.yaml` |
+| macOS | `~/Library/Application Support/zoom-mullet-begone/config.yaml` |
+| Windows | `%APPDATA%\zoom-mullet-begone\config.yaml` |
+| Linux | `~/.config/zoom-mullet-begone/config.yaml` |
 
-명령줄 옵션이 설정 파일보다 우선합니다. macOS와 Windows에서는 예전 위치의 `~/.config/meet-pants/config.yaml`이 자동으로 새 위치로 옮겨집니다. 예시:
+명령줄 옵션이 설정 파일보다 우선합니다. 예전 버전(프로젝트 이름이 meet-pants였을 때)의 설정은 자동으로 새 위치로 옮겨집니다. 예시:
 
 ```yaml
 garment: chino_khaki

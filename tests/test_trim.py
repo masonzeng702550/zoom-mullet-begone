@@ -6,11 +6,11 @@ import numpy as np
 import pytest
 import yaml
 
-from meet_pants.config import DEFAULT_GARMENTS_DIR
-from meet_pants.render.garment import GarmentError, TrimLine, load_garment
-from meet_pants.render.mesh import Mesh
-from meet_pants.render.trim import draw_trim, map_points, resample
-from meet_pants.render.warp_cv import Layer
+from zoom_mullet_begone.config import DEFAULT_GARMENTS_DIR
+from zoom_mullet_begone.render.garment import GarmentError, TrimLine, load_garment
+from zoom_mullet_begone.render.mesh import Mesh
+from zoom_mullet_begone.render.trim import draw_trim, map_points, resample
+from zoom_mullet_begone.render.warp_cv import Layer
 
 
 def square_mesh(offset=(0.0, 0.0), scale: float = 1.0) -> Mesh:

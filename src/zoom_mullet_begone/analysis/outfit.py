@@ -17,8 +17,8 @@ from dataclasses import dataclass
 import cv2
 import numpy as np
 
-from meet_pants.perception.segmenter import CLOTHES, Segmentation
-from meet_pants.perception.types import Lm, PoseFrame
+from zoom_mullet_begone.perception.segmenter import CLOTHES, Segmentation
+from zoom_mullet_begone.perception.types import Lm, PoseFrame
 
 SHOULDER_VISIBLE = 0.5
 # Part of the torso quad (shoulders -> hips) sampled: away from the arms,

@@ -1,8 +1,10 @@
-# meet-pants
+# Zoom Mullet Begone
 
 [English](README.md) | [繁體中文](README.zh-TW.md) | **日本語** | [한국어](README.ko.md)
 
-ビデオ会議用のバーチャルパンツです。meet-pants は姿勢推定モデルで脚を追跡し、脚の動きに合わせてパンツを描画して、その映像を仮想カメラに送ります。Google Meet、Zoom、Teams などのアプリで、このカメラを選んで使えます。
+> **Zoom マレット、退散！** 上も下もきちんとビジネス。（旧名 *meet-pants*）
+
+ビデオ会議用のバーチャルパンツです。zoom-mullet-begone は姿勢推定モデルで脚を追跡し、脚の動きに合わせてパンツを描画して、その映像を仮想カメラに送ります。Google Meet、Zoom、Teams などのアプリで、このカメラを選んで使えます。
 
 ## 機能
 
@@ -11,7 +13,7 @@
 - **近距離でも動作**：カメラに近づきすぎて腰と脚しか映らないときは、別の姿勢推定モデルに切り替わります。
 - **シャツに合わせたコーディネート**：上着に合うパンツのスタイルと色を自動で選びます。自分で指定することもできます。
 - **設定ページ**：ローカルの Web ページでスタイルと色を選べます。会議相手に届いている映像のライブ表示もあります。
-- **ブラウザー拡張機能**：Chrome、Edge、Arc の Google Meet などのサイトに「meet-pants」カメラを追加します。カメラドライバーのインストールは不要です。
+- **ブラウザー拡張機能**：Chrome、Edge、Arc の Google Meet などのサイトに「Zoom Mullet Begone」カメラを追加します。カメラドライバーのインストールは不要です。
 - **バックグラウンドモード**：メニューバーに常駐し、会議がカメラを使っているときだけ動作します。
 
 パンツは 3 種類（ネイビーのスラックス、カーキのチノパン、インディゴのジーンズ）が付属し、どれも色を変えられます。
@@ -19,7 +21,7 @@
 ## 現在の状況
 
 - macOS（Apple シリコン）で開発・テストしています。ブラウザー拡張機能は Google Meet で動作を確認済みです。
-- Windows と Linux でも動くはずですが、まだテストしていません。これらの OS のバックグラウンドモードは、ブラウザーのタブが meet-pants カメラを使ったことは検出できますが、デスクトップアプリが仮想カメラを開いたことはまだ検出できません。
+- Windows と Linux でも動くはずですが、まだテストしていません。これらの OS のバックグラウンドモードは、ブラウザーのタブが zoom-mullet-begone カメラを使ったことは検出できますが、デスクトップアプリが仮想カメラを開いたことはまだ検出できません。
 - ブラウザー拡張機能は Chromium 系ブラウザー（Chrome、Edge、Arc、Brave）で動作します。Safari と Firefox はまだ対応していません。
 - 腰が映っているあいだは常にパンツを描画します。「パンツをはいていない」状態の自動検出は今後の予定です。
 
@@ -29,7 +31,7 @@
 - 映像を会議に届ける方法（どちらか一方、または両方）：
   - **ブラウザー拡張機能**（Google Meet などの Web 会議。ほかにインストールするものはありません）：下の「ブラウザー拡張機能（OBS 不要）」を参照してください。
   - **仮想カメラのドライバー**（Zoom や Teams のデスクトップアプリを含む、すべてのアプリ）：
-    - **macOS / Windows**：[OBS Studio](https://obsproject.com/) 30 以上。一度 OBS を開いて「仮想カメラ開始」（Start Virtual Camera）を押し、OBS を終了します。meet-pants は OBS がインストールするカメラドライバーを使うので、普段 OBS を起動しておく必要はありません。
+    - **macOS / Windows**：[OBS Studio](https://obsproject.com/) 30 以上。一度 OBS を開いて「仮想カメラ開始」（Start Virtual Camera）を押し、OBS を終了します。zoom-mullet-begone は OBS がインストールするカメラドライバーを使うので、普段 OBS を起動しておく必要はありません。
     - **Linux**：[v4l2loopback](https://github.com/umlaeute/v4l2loopback)（Chrome に表示させるため `sudo modprobe v4l2loopback exclusive_caps=1` で読み込みます）。
 
 ## インストール
@@ -49,22 +51,22 @@ macOS では、初回起動時にターミナルアプリのカメラ使用許�
 **バックグラウンドモード（macOS、おすすめ）：**
 
 ```bash
-.venv/bin/python -m meet_pants --background
+.venv/bin/python -m zoom_mullet_begone --background
 ```
 
-メニューバーにパンツのアイコンが表示されます。会議に参加してカメラに「meet-pants」（ブラウザー拡張機能）または「OBS Virtual Camera」を選ぶと、約 3.5 秒後にパンツが表示されます。
+メニューバーにパンツのアイコンが表示されます。会議に参加してカメラに「Zoom Mullet Begone」（ブラウザー拡張機能）または「OBS Virtual Camera」を選ぶと、約 3.5 秒後にパンツが表示されます。
 
 **フォアグラウンドモード（すべての OS）：**
 
 ```bash
-.venv/bin/python -m meet_pants
+.venv/bin/python -m zoom_mullet_begone
 ```
 
 プレビューウィンドウが開き、すぐに仮想カメラへ映像を送ります。
 
 ## ブラウザー拡張機能（OBS 不要）
 
-`browser-extension/` の拡張機能は、すべての Web サイトに「meet-pants」という名前のカメラを追加します。Google Meet（またはほかのサイト）でこのカメラを選ぶと、サイトに meet-pants の映像が届きます。仮想カメラのドライバーが不要なので、OBS がなくても使えます。
+`browser-extension/` の拡張機能は、すべての Web サイトに「Zoom Mullet Begone」という名前のカメラを追加します。Google Meet（またはほかのサイト）でこのカメラを選ぶと、サイトに zoom-mullet-begone の映像が届きます。仮想カメラのドライバーが不要なので、OBS がなくても使えます。
 
 **インストール（Chrome、Edge、Arc、Brave）：**
 
@@ -74,44 +76,44 @@ macOS では、初回起動時にターミナルアプリのカメラ使用許�
 
 **使い方：**
 
-1. meet-pants を起動します。バックグラウンドモードがおすすめです：`.venv/bin/python -m meet_pants --background`。
-2. Google Meet では、設定 → 動画 → カメラ → **meet-pants** を選びます。ほかのサイトでも、カメラを選ぶ場所に表示されます。
-3. ツールバーの拡張機能ボタンで、meet-pants が動いているかを確認でき、設定ページも開けます。
+1. zoom-mullet-begone を起動します。バックグラウンドモードがおすすめです：`.venv/bin/python -m zoom_mullet_begone --background`。
+2. Google Meet では、設定 → 動画 → カメラ → **Zoom Mullet Begone** を選びます。ほかのサイトでも、カメラを選ぶ場所に表示されます。
+3. ツールバーの拡張機能ボタンで、zoom-mullet-begone が動いているかを確認でき、設定ページも開けます。
 
 **プライバシーと安全性：**
 
-- meet-pants カメラを使えるのは、すでにカメラの使用を許可されているサイトだけです。実際のカメラとまったく同じ扱いです。
-- 映像は 127.0.0.1 を通って meet-pants からブラウザーへ渡り、このコンピューターの外には出ません。meet-pants はブラウザー拡張機能からの接続しか受け付けない（Web ページが設定できないリクエストヘッダー、つまり `Sec-Fetch-Site` か拡張機能の `Origin` で判定）ので、Web サイトがこれを通じてカメラを読み取ることはできません。
-- バックグラウンドモードでは、タブが meet-pants カメラを選ぶと開始し、タブが使い終わってから約 3 秒で停止します。
+- zoom-mullet-begone カメラを使えるのは、すでにカメラの使用を許可されているサイトだけです。実際のカメラとまったく同じ扱いです。
+- 映像は 127.0.0.1 を通って zoom-mullet-begone からブラウザーへ渡り、このコンピューターの外には出ません。zoom-mullet-begone はブラウザー拡張機能からの接続しか受け付けない（Web ページが設定できないリクエストヘッダー、つまり `Sec-Fetch-Site` か拡張機能の `Origin` で判定）ので、Web サイトがこれを通じてカメラを読み取ることはできません。
+- バックグラウンドモードでは、タブが zoom-mullet-begone カメラを選ぶと開始し、タブが使い終わってから約 3 秒で停止します。
 
 デスクトップアプリ（Zoom、Teams、FaceTime）からは拡張機能のカメラが見えないため、これらには引き続き仮想カメラのドライバーが必要です。
 
-**映像に「找不到 meet-pants」（meet-pants が見つかりません）と表示される場合**は、meet-pants が起動していないか、別のポートを使っています。起動すれば、タブは 2 秒以内に自動で再接続します。タブがつながると、ターミナルに `browser stream: a tab connected` と表示されます。
+**映像に「找不到 Zoom Mullet Begone」（zoom-mullet-begone が見つかりません）と表示される場合**は、zoom-mullet-begone が起動していないか、別のポートを使っています。起動すれば、タブは 2 秒以内に自動で再接続します。タブがつながると、ターミナルに `browser stream: a tab connected` と表示されます。
 
 ## 会議や Web サイトで使う
 
-仮想カメラのドライバーを使う場合、meet-pants は映像を「OBS Virtual Camera」に送ります。OS はこれを通常のカメラとして扱い、内蔵カメラと並べて表示します。カメラを選べるアプリやサイトなら、どこでも使えます。
+仮想カメラのドライバーを使う場合、zoom-mullet-begone は映像を「OBS Virtual Camera」に送ります。OS はこれを通常のカメラとして扱い、内蔵カメラと並べて表示します。カメラを選べるアプリやサイトなら、どこでも使えます。
 
 - **Google Meet**（どのブラウザでも）：設定 → 動画 → カメラ → OBS Virtual Camera。
 - **Chrome、Edge、Arc のその他のサイト**：アドレスバーのカメラアイコンから選ぶか、`chrome://settings/content/camera` で全サイト共通に設定します。
 - **Safari と Firefox**：サイトごとに確認されるので、カメラの確認画面かサイト設定で OBS Virtual Camera を選びます。
 - **Zoom、Teams、FaceTime、Discord、Slack**：各アプリのビデオ設定で OBS Virtual Camera を選びます。
 
-内蔵カメラを使い続けるアプリは、meet-pants では置き換えられません。macOS ではどのアプリも実カメラを直接開けるうえ、システム全体でカメラを差し替える方法がないためです。meet-pants が動いていないとき、仮想カメラには OBS の待機画像が表示されます。
+内蔵カメラを使い続けるアプリは、zoom-mullet-begone では置き換えられません。macOS ではどのアプリも実カメラを直接開けるうえ、システム全体でカメラを差し替える方法がないためです。zoom-mullet-begone が動いていないとき、仮想カメラには OBS の待機画像が表示されます。
 
 ## バックグラウンドモード
 
 ```bash
-.venv/bin/python -m meet_pants --background
+.venv/bin/python -m zoom_mullet_begone --background
 ```
 
 メニューバーのアイコンは、待機中は線だけ、使用中は塗りつぶしで表示されます。
 
-- **待機中**：カメラはオフで、ほとんど何も動きません（CPU 約 0%）。1 秒に 2 回、ブラウザーのタブが meet-pants カメラを選んだか、そして macOS ではどれかのアプリが OBS Virtual Camera を開いたか（CoreMediaIO 経由）を確認します。
-- **会議がカメラを開いたとき**：meet-pants がカメラをオンにし、約 3.5 秒後にパンツが表示されます。
+- **待機中**：カメラはオフで、ほとんど何も動きません（CPU 約 0%）。1 秒に 2 回、ブラウザーのタブが zoom-mullet-begone カメラを選んだか、そして macOS ではどれかのアプリが OBS Virtual Camera を開いたか（CoreMediaIO 経由）を確認します。
+- **会議がカメラを開いたとき**：zoom-mullet-begone がカメラをオンにし、約 3.5 秒後にパンツが表示されます。
 - **ブラウザーのタブがカメラを使い終わったとき**：約 3 秒後に停止します。ブラウザーのタブから始まった処理は、OBS Virtual Camera には触れません。
-- **デスクトップアプリが OBS Virtual Camera を閉じたとき**：meet-pants 自身が送る映像のせいで仮想カメラは「使用中」のままになるため、これを直接は検出できません。カメラの前に 1 分間だれもいなかったら、少しだけ映像の送信を止めて確認し直します。カメラを読んでいるアプリがなければ、カメラをオフにして待機に戻ります。会議のあとも席に座ったままだと、席を離れるか、終了するか、メニューで自動開始をオフにするまで動き続けます。
-- **メニュー**：現在の状態、「開啟設定…」（設定を開く）、「會議開鏡頭時自動套用」（会議がカメラを開いたら自動で開始）、「結束 meet-pants」（終了）。
+- **デスクトップアプリが OBS Virtual Camera を閉じたとき**：zoom-mullet-begone 自身が送る映像のせいで仮想カメラは「使用中」のままになるため、これを直接は検出できません。カメラの前に 1 分間だれもいなかったら、少しだけ映像の送信を止めて確認し直します。カメラを読んでいるアプリがなければ、カメラをオフにして待機に戻ります。会議のあとも席に座ったままだと、席を離れるか、終了するか、メニューで自動開始をオフにするまで動き続けます。
+- **メニュー**：現在の状態、「開啟設定…」（設定を開く）、「會議開鏡頭時自動套用」（会議がカメラを開いたら自動で開始）、「結束 zoom-mullet-begone」（終了）。
 
 Windows と Linux のバックグラウンドモードは、デスクトップアプリが仮想カメラを開いたタイミングをまだ検出できません。仮想カメラのドライバーがあれば常に動作し、なければブラウザー拡張機能だけに映像を送り、タブに合わせて開始・停止します。
 
@@ -119,14 +121,14 @@ Windows と Linux のバックグラウンドモードは、デスクトップ�
 
 ## 設定ページ
 
-meet-pants の実行中に `http://127.0.0.1:8765/` を開くか、プレビューで `S` を押すか、メニューバーで「開啟設定…」を選びます。次のことができます。
+zoom-mullet-begone の実行中に `http://127.0.0.1:8765/` を開くか、プレビューで `S` を押すか、メニューバーで「開啟設定…」を選びます。次のことができます。
 
 - スタイルの選択：カーキのチノパン、ネイビーのスラックス、ジーンズ
 - 色の選択：もとの色、プリセット、またはカラーピッカーで任意の色（生地の陰影、織り目、しわはそのまま残ります）
 - シャツに合わせる機能のオン／オフ
 - 会議に届いている映像のライブ表示（バックグラウンドモード）
 
-変更はすぐに画面へ反映され、次回起動時のデフォルトとして保存されます。`python -m meet_pants --settings` を使うと、カメラを起動せずに設定ページだけを開けます。
+変更はすぐに画面へ反映され、次回起動時のデフォルトとして保存されます。`python -m zoom_mullet_begone --settings` を使うと、カメラを起動せずに設定ページだけを開けます。
 
 設定ページとメニューバーは、今のところ繁体字中国語のみです。設定ページは 127.0.0.1 でのみ待ち受け、ページ自身からの変更しか受け付けないので、ほかの Web サイトから設定を変えられることはありません。設定ファイルで `settings_port: 0` にするとオフになります。
 
@@ -158,11 +160,11 @@ meet-pants の実行中に `http://127.0.0.1:8765/` を開くか、プレビュ�
 
 | OS | 場所 |
 |---|---|
-| macOS | `~/Library/Application Support/meet-pants/config.yaml` |
-| Windows | `%APPDATA%\meet-pants\config.yaml` |
-| Linux | `~/.config/meet-pants/config.yaml` |
+| macOS | `~/Library/Application Support/zoom-mullet-begone/config.yaml` |
+| Windows | `%APPDATA%\zoom-mullet-begone\config.yaml` |
+| Linux | `~/.config/zoom-mullet-begone/config.yaml` |
 
-コマンドラインオプションは設定ファイルより優先されます。macOS と Windows では、以前の場所にある `~/.config/meet-pants/config.yaml` が自動で新しい場所へ移動されます。例：
+コマンドラインオプションは設定ファイルより優先されます。以前のバージョン（meet-pants という名前だったころ）の設定は、自動で新しい場所へ移動されます。例：
 
 ```yaml
 garment: chino_khaki

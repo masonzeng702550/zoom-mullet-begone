@@ -6,7 +6,7 @@ import cv2
 import numpy as np
 import pytest
 
-from meet_pants.config import Config
+from zoom_mullet_begone.config import Config
 
 ROOT = Path(__file__).resolve().parents[1]
 SAMPLE_IMAGE = ROOT / "data" / "pose.jpg"  # python scripts/download_models.py does not fetch this

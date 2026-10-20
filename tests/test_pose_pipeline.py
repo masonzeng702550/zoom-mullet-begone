@@ -8,10 +8,10 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from meet_pants.config import Config, PoseConfig
-from meet_pants.perception.pose import PoseDetector
-from meet_pants.perception.types import NUM_LANDMARKS, Lm
-from meet_pants.pipeline import run
+from zoom_mullet_begone.config import Config, PoseConfig
+from zoom_mullet_begone.perception.pose import PoseDetector
+from zoom_mullet_begone.perception.types import NUM_LANDMARKS, Lm
+from zoom_mullet_begone.pipeline import run
 
 
 def test_detects_full_body(model_path: Path, person_image: np.ndarray) -> None:

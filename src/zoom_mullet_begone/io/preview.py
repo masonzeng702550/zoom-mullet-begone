@@ -12,12 +12,12 @@ import cv2
 import numpy as np
 from mediapipe.tasks.python import vision
 
-from meet_pants.config import DebugConfig
-from meet_pants.perception.segmenter import Segmentation
-from meet_pants.perception.types import LEG_LANDMARKS, PoseFrame
-from meet_pants.render.mesh import Mesh
+from zoom_mullet_begone.config import DebugConfig
+from zoom_mullet_begone.perception.segmenter import Segmentation
+from zoom_mullet_begone.perception.types import LEG_LANDMARKS, PoseFrame
+from zoom_mullet_begone.render.mesh import Mesh
 
-WINDOW_NAME = "meet-pants preview"
+WINDOW_NAME = "Zoom Mullet Begone preview"
 CONNECTIONS = [(c.start, c.end) for c in vision.PoseLandmarksConnections.POSE_LANDMARKS]
 VISIBLE = 0.5
 

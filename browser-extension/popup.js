@@ -10,13 +10,13 @@ async function refresh() {
   try {
     const r = await fetch(`http://127.0.0.1:${port}/api/settings`, { cache: "no-store" });
     const data = await r.json();
-    $("state").textContent = "meet-pants 執行中";
+    $("state").textContent = "Zoom Mullet Begone 執行中";
     $("state").className = "ok";
     $("detail").textContent = data.status || "";
   } catch (e) {
-    $("state").textContent = "找不到 meet-pants";
+    $("state").textContent = "找不到 Zoom Mullet Begone";
     $("state").className = "bad";
-    $("detail").textContent = "請先在電腦上啟動 meet-pants（例如 python -m meet_pants --background）。";
+    $("detail").textContent = "請先在電腦上啟動 Zoom Mullet Begone（例如 python -m zoom_mullet_begone --background）。";
   }
 }
 

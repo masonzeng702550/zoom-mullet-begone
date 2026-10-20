@@ -2,7 +2,7 @@
 
 macOS: CoreMediaIO's kCMIODevicePropertyDeviceIsRunningSomewhere on the
 "OBS Virtual Camera" device turns true while any process streams it. Our own
-frame sending counts too, so while meet-pants sends frames the answer is only
+frame sending counts too, so while zoom-mullet-begone sends frames the answer is only
 meaningful after briefly stopping (see the background service).
 
 Called through ctypes: no extra packages and no camera permission needed.

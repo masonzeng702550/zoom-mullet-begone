@@ -1,5 +1,5 @@
 // Hidden extension frame inside the page: reads the MJPEG stream from the
-// meet-pants app (as the extension, so websites cannot) and hands decoded
+// zoom-mullet-begone app (as the extension, so websites cannot) and hands decoded
 // frames to the page script.
 "use strict";
 
@@ -8,13 +8,13 @@ const RETRY_MS = 2000;
 const session = decodeURIComponent(location.hash.slice(1));
 
 function toPage(message, transfer) {
-  window.parent.postMessage({ source: "meet-pants-bridge", session, ...message }, "*", transfer || []);
+  window.parent.postMessage({ source: "zoom-mullet-begone-bridge", session, ...message }, "*", transfer || []);
 }
 
 async function streamOnce(port) {
   const response = await fetch(`http://127.0.0.1:${port}/stream.mjpg`, { cache: "no-store" });
   if (!response.ok) throw new Error(`HTTP ${response.status}`);
-  toPage({ type: "status", text: "meet-pants 啟動中…" });
+  toPage({ type: "status", text: "Zoom Mullet Begone 啟動中…" });
   let decoding = false;
   let latest = null; // newest frame not yet decoded; older ones are dropped
   const decode = async () => {
@@ -51,7 +51,7 @@ async function main() {
     try {
       await streamOnce(port);
     } catch (e) {
-      toPage({ type: "status", text: "找不到 meet-pants，請先啟動它" });
+      toPage({ type: "status", text: "找不到 Zoom Mullet Begone，請先啟動它" });
     }
     await new Promise((r) => setTimeout(r, RETRY_MS));
   }

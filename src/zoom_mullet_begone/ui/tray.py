@@ -12,7 +12,7 @@ from collections.abc import Callable
 
 from PIL import Image, ImageDraw
 
-from meet_pants.service import STATUS_TEXT, BackgroundService
+from zoom_mullet_begone.service import STATUS_TEXT, BackgroundService
 
 ICON_SIZE = 64
 
@@ -65,9 +65,9 @@ def run_tray(service: BackgroundService) -> int:
         pystray.MenuItem("開啟設定…", open_settings, default=True, enabled=lambda _i: service.server is not None),
         pystray.MenuItem("會議開鏡頭時自動套用", toggle_auto, checked=lambda _i: service.auto_start),
         pystray.Menu.SEPARATOR,
-        pystray.MenuItem("結束 meet-pants", quit_app),
+        pystray.MenuItem("結束 Zoom Mullet Begone", quit_app),
     )
-    icon = pystray.Icon("meet-pants", pants_icon(False), "meet-pants", menu)
+    icon = pystray.Icon("zoom-mullet-begone", pants_icon(False), "Zoom Mullet Begone", menu)
 
     def refresh() -> None:
         def apply() -> None:

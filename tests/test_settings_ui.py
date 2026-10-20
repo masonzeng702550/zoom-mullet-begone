@@ -11,9 +11,9 @@ import numpy as np
 import pytest
 import yaml
 
-from meet_pants.pipeline import Wardrobe, apply_choice
-from meet_pants.render.garment import GarmentError, load_garment, parse_color, recolor_texture, with_color
-from meet_pants.ui.settings import GarmentChoice, SettingsHub, SettingsServer, effective, normalize_choice, save_choice
+from zoom_mullet_begone.pipeline import Wardrobe, apply_choice
+from zoom_mullet_begone.render.garment import GarmentError, load_garment, parse_color, recolor_texture, with_color
+from zoom_mullet_begone.ui.settings import GarmentChoice, SettingsHub, SettingsServer, effective, normalize_choice, save_choice
 
 GARMENTS = Path(__file__).resolve().parents[1] / "garments"
 IDS = ["chino_khaki", "dress_navy", "jeans_indigo"]
@@ -164,7 +164,7 @@ def test_browser_stream_only_for_extensions(tmp_path: Path) -> None:
         threading.Thread(target=publish, daemon=True).start()
         head = r.read(200)
         stop.set()
-        assert head.startswith(b"--meetpantsframe\r\nContent-Type: image/jpeg\r\nContent-Length: ")
+        assert head.startswith(b"--zoommulletbegoneframe\r\nContent-Type: image/jpeg\r\nContent-Length: ")
         assert b"\xff\xd8" in head  # JPEG start
         r.close()
     assert hub.feed.closed

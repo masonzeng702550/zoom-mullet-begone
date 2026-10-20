@@ -1,15 +1,15 @@
 // Runs in the page (MAIN world) before the page's own scripts.
-// Adds a "meet-pants" camera to navigator.mediaDevices. When a page asks for
-// it, returns a stream drawn from frames the meet-pants app sends (via the
+// Adds a "zoom-mullet-begone" camera to navigator.mediaDevices. When a page asks for
+// it, returns a stream drawn from frames the zoom-mullet-begone app sends (via the
 // extension's content script and bridge frame).
 (() => {
   "use strict";
   const md = navigator.mediaDevices;
-  if (!md || md.__meetPants) return;
-  Object.defineProperty(md, "__meetPants", { value: true });
+  if (!md || md.__zoomMulletBegone) return;
+  Object.defineProperty(md, "__zoomMulletBegone", { value: true });
 
-  const DEVICE_ID = "meet-pants-camera";
-  const LABEL = "meet-pants";
+  const DEVICE_ID = "zoom-mullet-begone-camera";
+  const LABEL = "Zoom Mullet Begone";
   const FPS = 30;
   const originalGetUserMedia = md.getUserMedia.bind(md);
   const originalEnumerate = md.enumerateDevices.bind(md);
@@ -44,7 +44,7 @@
 
   window.addEventListener("message", (event) => {
     const data = event.data;
-    if (!data || data.source !== "meet-pants-bridge") return;
+    if (!data || data.source !== "zoom-mullet-begone-bridge") return;
     const session = sessions.get(data.session);
     if (!session) {
       if (data.bitmap) data.bitmap.close();
@@ -75,7 +75,7 @@
 
   function tellContentScript(message) {
     // "*": sandboxed and about:blank frames have an opaque origin; only session ids are sent
-    window.postMessage({ source: "meet-pants-page", ...message }, "*");
+    window.postMessage({ source: "zoom-mullet-begone-page", ...message }, "*");
   }
 
   async function ensureCameraPermission() {
@@ -91,7 +91,7 @@
     probe.getTracks().forEach((t) => t.stop());
   }
 
-  async function meetPantsStream(constraints) {
+  async function mulletBegoneStream(constraints) {
     await ensureCameraPermission();
     const id = Math.random().toString(36).slice(2) + Date.now().toString(36);
     const canvas = document.createElement("canvas");
@@ -99,7 +99,7 @@
     canvas.height = 720;
     const session = { canvas, ctx: canvas.getContext("2d"), gotFrame: false };
     sessions.set(id, session);
-    placeholder(session, "meet-pants 啟動中…");
+    placeholder(session, "Zoom Mullet Begone 啟動中…");
 
     const stream = canvas.captureStream(FPS);
     const [track] = stream.getVideoTracks();
@@ -130,6 +130,6 @@
   }
 
   md.getUserMedia = function getUserMedia(constraints) {
-    return wantsUs(constraints) ? meetPantsStream(constraints) : originalGetUserMedia(constraints);
+    return wantsUs(constraints) ? mulletBegoneStream(constraints) : originalGetUserMedia(constraints);
   };
 })();

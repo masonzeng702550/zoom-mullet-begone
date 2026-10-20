@@ -19,7 +19,7 @@ import numpy as np
 from mediapipe.tasks import python as mp_tasks
 from mediapipe.tasks.python import vision
 
-from meet_pants.perception.pose import to_mp_image
+from zoom_mullet_begone.perception.pose import to_mp_image
 
 BACKGROUND, HAIR, BODY_SKIN, FACE_SKIN, CLOTHES, OTHERS = range(6)
 MODEL_NAME = "selfie_multiclass_256x256.tflite"

@@ -1,6 +1,6 @@
-"""Live video for the meet-pants browser extension (no virtual camera driver needed).
+"""Live video for the zoom-mullet-begone browser extension (no virtual camera driver needed).
 
-The extension adds a "meet-pants" camera to web pages and reads frames from
+The extension adds a "zoom-mullet-begone" camera to web pages and reads frames from
 the settings server as an MJPEG stream (`/stream.mjpg`). Frames are encoded
 only while a client is connected.
 

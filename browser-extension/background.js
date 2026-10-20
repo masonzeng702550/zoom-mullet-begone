@@ -1,4 +1,4 @@
-// Remembers which tab sessions may receive meet-pants video. The content
+// Remembers which tab sessions may receive zoom-mullet-begone video. The content
 // script authorizes a session only after checking the site's camera
 // permission; the bridge frame asks here before it starts streaming.
 "use strict";

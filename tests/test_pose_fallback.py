@@ -10,10 +10,10 @@ import numpy as np
 import pytest
 from helpers import make_pose, standing_points
 
-from meet_pants.config import Config
-from meet_pants.perception.chain import FALLBACK_RETRY_FRAMES, PoseChain, plausible_fallback
-from meet_pants.perception.rtmpose import RtmPoseDetector, to_mediapipe
-from meet_pants.perception.types import NUM_LANDMARKS, Lm, PoseFrame
+from zoom_mullet_begone.config import Config
+from zoom_mullet_begone.perception.chain import FALLBACK_RETRY_FRAMES, PoseChain, plausible_fallback
+from zoom_mullet_begone.perception.rtmpose import RtmPoseDetector, to_mediapipe
+from zoom_mullet_begone.perception.types import NUM_LANDMARKS, Lm, PoseFrame
 
 ROOT = Path(__file__).resolve().parents[1]
 # A webcam frame cropped to waist and legs (person too close), where MediaPipe

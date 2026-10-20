@@ -17,22 +17,22 @@ from pathlib import Path
 import cv2
 import numpy as np
 
-from meet_pants.analysis.leg_geometry import LegGeometry, LegTracker
-from meet_pants.analysis.outfit import OutfitMatcher, sample_top_color, texture_color
-from meet_pants.config import MODES, Config, DebugConfig
-from meet_pants.io.capture import CaptureError, open_source
-from meet_pants.io.preview import KEY_ESC, PreviewWindow, Stats, render_preview
-from meet_pants.io.virtualcam import VirtualCam, VirtualCamError
-from meet_pants.perception.chain import PoseChain
-from meet_pants.perception.segmenter import BodySegmenter, Segmentation
-from meet_pants.perception.types import PoseFrame
-from meet_pants.render.compositor import Compositor, SceneMasks
-from meet_pants.render.garment import Garment, GarmentError, list_garments, load_garment, parse_color, with_color
-from meet_pants.render.mesh import Mesh, build_mesh
-from meet_pants.render.trim import draw_trim
-from meet_pants.render.warp_cv import render_mesh
-from meet_pants.tracking.one_euro import LandmarkSmoother
-from meet_pants.ui.settings import GarmentChoice, SettingsHub, SettingsServer, effective
+from zoom_mullet_begone.analysis.leg_geometry import LegGeometry, LegTracker
+from zoom_mullet_begone.analysis.outfit import OutfitMatcher, sample_top_color, texture_color
+from zoom_mullet_begone.config import MODES, Config, DebugConfig
+from zoom_mullet_begone.io.capture import CaptureError, open_source
+from zoom_mullet_begone.io.preview import KEY_ESC, PreviewWindow, Stats, render_preview
+from zoom_mullet_begone.io.virtualcam import VirtualCam, VirtualCamError
+from zoom_mullet_begone.perception.chain import PoseChain
+from zoom_mullet_begone.perception.segmenter import BodySegmenter, Segmentation
+from zoom_mullet_begone.perception.types import PoseFrame
+from zoom_mullet_begone.render.compositor import Compositor, SceneMasks
+from zoom_mullet_begone.render.garment import Garment, GarmentError, list_garments, load_garment, parse_color, with_color
+from zoom_mullet_begone.render.mesh import Mesh, build_mesh
+from zoom_mullet_begone.render.trim import draw_trim
+from zoom_mullet_begone.render.warp_cv import render_mesh
+from zoom_mullet_begone.tracking.one_euro import LandmarkSmoother
+from zoom_mullet_begone.ui.settings import GarmentChoice, SettingsHub, SettingsServer, effective
 
 FADE_IN_MS = 120
 TOP_SAMPLE_EVERY = 5  # frames between shirt color samples

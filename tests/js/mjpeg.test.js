@@ -5,7 +5,7 @@ const { MjpegParser } = require("../../browser-extension/mjpeg.js");
 
 const enc = (s) => new TextEncoder().encode(s);
 function part(bytes) {
-  const head = enc(`--meetpantsframe\r\nContent-Type: image/jpeg\r\nContent-Length: ${bytes.length}\r\n\r\n`);
+  const head = enc(`--zoommulletbegoneframe\r\nContent-Type: image/jpeg\r\nContent-Length: ${bytes.length}\r\n\r\n`);
   const out = new Uint8Array(head.length + bytes.length + 2);
   out.set(head, 0); out.set(bytes, head.length); out.set(enc("\r\n"), head.length + bytes.length);
   return out;

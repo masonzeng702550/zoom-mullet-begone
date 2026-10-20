@@ -6,14 +6,14 @@ import numpy as np
 import pytest
 
 from helpers import legs_mask, make_pose, standing_points
-from meet_pants.analysis.leg_geometry import LegTracker
-from meet_pants.config import DEFAULT_GARMENTS_DIR
-from meet_pants.perception.types import Lm
-from meet_pants.pipeline import Wardrobe, dress
-from meet_pants.render.garment import GarmentError, list_garments, load_garment
-from meet_pants.render.mesh import Mesh, build_mesh
-from meet_pants.render.compositor import Compositor, SceneMasks, estimate_noise
-from meet_pants.render.warp_cv import Layer, pick_level, render_mesh
+from zoom_mullet_begone.analysis.leg_geometry import LegTracker
+from zoom_mullet_begone.config import DEFAULT_GARMENTS_DIR
+from zoom_mullet_begone.perception.types import Lm
+from zoom_mullet_begone.pipeline import Wardrobe, dress
+from zoom_mullet_begone.render.garment import GarmentError, list_garments, load_garment
+from zoom_mullet_begone.render.mesh import Mesh, build_mesh
+from zoom_mullet_begone.render.compositor import Compositor, SceneMasks, estimate_noise
+from zoom_mullet_begone.render.warp_cv import Layer, pick_level, render_mesh
 
 W, H = 440, 520
 

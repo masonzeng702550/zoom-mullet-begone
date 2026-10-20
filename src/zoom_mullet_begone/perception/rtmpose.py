@@ -22,7 +22,7 @@ import cv2
 import numpy as np
 import onnxruntime as ort
 
-from meet_pants.perception.types import NUM_LANDMARKS, Landmark, Lm, PoseFrame
+from zoom_mullet_begone.perception.types import NUM_LANDMARKS, Landmark, Lm, PoseFrame
 
 DETECTOR_INPUT = (416, 416)  # (w, h)
 POSE_INPUT = (192, 256)  # (w, h)

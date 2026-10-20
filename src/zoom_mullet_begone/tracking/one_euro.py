@@ -11,8 +11,8 @@ from dataclasses import replace
 
 import numpy as np
 
-from meet_pants.config import SmoothingConfig
-from meet_pants.perception.types import Landmark, PoseFrame
+from zoom_mullet_begone.config import SmoothingConfig
+from zoom_mullet_begone.perception.types import Landmark, PoseFrame
 
 
 def _alpha(cutoff: np.ndarray | float, dt: float) -> np.ndarray | float:

@@ -12,7 +12,7 @@ from dataclasses import dataclass
 import cv2
 import numpy as np
 
-from meet_pants.render.mesh import Mesh
+from zoom_mullet_begone.render.mesh import Mesh
 
 SUBPIXEL_SHIFT = 4  # fillConvexPoly fixed-point bits
 

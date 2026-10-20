@@ -12,8 +12,8 @@ import numpy as np
 from mediapipe.tasks import python as mp_tasks
 from mediapipe.tasks.python import vision
 
-from meet_pants.config import PoseConfig
-from meet_pants.perception.types import Landmark, PoseFrame
+from zoom_mullet_begone.config import PoseConfig
+from zoom_mullet_begone.perception.types import Landmark, PoseFrame
 
 
 def to_mp_image(bgr: np.ndarray, gpu: bool) -> mp.Image:

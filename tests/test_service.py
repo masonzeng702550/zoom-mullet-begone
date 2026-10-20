@@ -11,10 +11,10 @@ from pathlib import Path
 
 import numpy as np
 
-from meet_pants.config import Config
-from meet_pants.pipeline import RunControl
-from meet_pants.service import BackgroundService
-from meet_pants.worker import run_in_child
+from zoom_mullet_begone.config import Config
+from zoom_mullet_begone.pipeline import RunControl
+from zoom_mullet_begone.service import BackgroundService
+from zoom_mullet_begone.worker import run_in_child
 
 
 class FakeWatcher:
@@ -77,7 +77,7 @@ def make_service(tmp_path: Path, vcam: bool = True) -> tuple[BackgroundService, 
 
 
 def test_waits_until_a_meeting_opens_the_camera(tmp_path: Path, monkeypatch) -> None:
-    monkeypatch.setattr("meet_pants.service.POLL_S", 0.02)
+    monkeypatch.setattr("zoom_mullet_begone.service.POLL_S", 0.02)
     service, watcher, runner = make_service(tmp_path)
     service.start()
     try:
@@ -91,8 +91,8 @@ def test_waits_until_a_meeting_opens_the_camera(tmp_path: Path, monkeypatch) -> 
 
 
 def test_probe_ends_the_run_when_the_meeting_left(tmp_path: Path, monkeypatch) -> None:
-    monkeypatch.setattr("meet_pants.service.POLL_S", 0.02)
-    monkeypatch.setattr("meet_pants.service.PROBE_SETTLE_S", 0.0)
+    monkeypatch.setattr("zoom_mullet_begone.service.POLL_S", 0.02)
+    monkeypatch.setattr("zoom_mullet_begone.service.PROBE_SETTLE_S", 0.0)
     service, watcher, runner = make_service(tmp_path)
     watcher.meeting = True
     service.start()
@@ -114,7 +114,7 @@ def test_probe_ends_the_run_when_the_meeting_left(tmp_path: Path, monkeypatch) -
 
 
 def test_turning_off_auto_start_stops_and_waits(tmp_path: Path, monkeypatch) -> None:
-    monkeypatch.setattr("meet_pants.service.POLL_S", 0.02)
+    monkeypatch.setattr("zoom_mullet_begone.service.POLL_S", 0.02)
     service, watcher, runner = make_service(tmp_path)
     watcher.meeting = True
     service.start()
@@ -132,15 +132,15 @@ def test_turning_off_auto_start_stops_and_waits(tmp_path: Path, monkeypatch) -> 
 
 def test_browser_tab_starts_and_stops_without_a_virtual_camera(tmp_path: Path, monkeypatch) -> None:
     """No OBS: only the browser extension's stream counts, and the run ends after it leaves."""
-    monkeypatch.setattr("meet_pants.service.POLL_S", 0.02)
-    monkeypatch.setattr("meet_pants.service.BROWSER_GRACE_S", 0.1)
+    monkeypatch.setattr("zoom_mullet_begone.service.POLL_S", 0.02)
+    monkeypatch.setattr("zoom_mullet_begone.service.BROWSER_GRACE_S", 0.1)
     service, watcher, runner = make_service(tmp_path, vcam=False)
     watcher.meeting = True  # ignored: there is no virtual camera to feed
     service.start()
     try:
         time.sleep(0.2)
         assert runner.runs == 0 and service.config.vcam is False
-        service.hub.feed.connect()  # a tab opened the meet-pants camera
+        service.hub.feed.connect()  # a tab opened the zoom-mullet-begone camera
         assert wait_for(lambda: service.state == "active")
         service.hub.feed.disconnect()
         assert wait_for(lambda: service.state == "waiting")
@@ -152,8 +152,8 @@ def test_browser_tab_starts_and_stops_without_a_virtual_camera(tmp_path: Path, m
 def test_browser_run_leaves_the_virtual_camera_alone_and_ends_with_the_tab(tmp_path: Path, monkeypatch) -> None:
     """OBS installed but unused: a tab-started run must not open the virtual camera, so it can
     stop as soon as the tab leaves; an app opening the virtual camera restarts it with output."""
-    monkeypatch.setattr("meet_pants.service.POLL_S", 0.02)
-    monkeypatch.setattr("meet_pants.service.BROWSER_GRACE_S", 0.1)
+    monkeypatch.setattr("zoom_mullet_begone.service.POLL_S", 0.02)
+    monkeypatch.setattr("zoom_mullet_begone.service.BROWSER_GRACE_S", 0.1)
     configs = []
     service, watcher, runner = make_service(tmp_path, vcam=True)
     real_runner = runner
@@ -211,8 +211,8 @@ def alive(pid: int) -> bool:
 def test_runs_in_a_child_process_that_exits_with_the_run(tmp_path: Path, monkeypatch) -> None:
     """The default runner: frames, settings and probes cross the process boundary, and the
     child (with the models' memory) is gone once the run ends."""
-    monkeypatch.setattr("meet_pants.service.POLL_S", 0.02)
-    monkeypatch.setattr("meet_pants.service.PROBE_SETTLE_S", 0.0)
+    monkeypatch.setattr("zoom_mullet_begone.service.POLL_S", 0.02)
+    monkeypatch.setattr("zoom_mullet_begone.service.PROBE_SETTLE_S", 0.0)
     service, watcher, _ = make_service(tmp_path)
     service._runner = functools.partial(run_in_child, target=child_runner)
     service.hub.set(replace(service.hub.choice, color=""), save=False)

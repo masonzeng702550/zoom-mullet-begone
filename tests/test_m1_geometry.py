@@ -4,16 +4,16 @@ import numpy as np
 import pytest
 
 from helpers import legs_mask, make_pose, standing_points
-from meet_pants.analysis.leg_geometry import (
+from zoom_mullet_begone.analysis.leg_geometry import (
     CROTCH_DEPTH_DEFAULT,
     LegTracker,
     outward_normal,
     scan_crotch_depth,
     scan_profile,
 )
-from meet_pants.config import SmoothingConfig
-from meet_pants.perception.types import Lm, PoseFrame
-from meet_pants.tracking.one_euro import LandmarkSmoother, OneEuroFilter
+from zoom_mullet_begone.config import SmoothingConfig
+from zoom_mullet_begone.perception.types import Lm, PoseFrame
+from zoom_mullet_begone.tracking.one_euro import LandmarkSmoother, OneEuroFilter
 
 W, H = 440, 520
 

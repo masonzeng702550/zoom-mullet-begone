@@ -1,5 +1,5 @@
 // Isolated content script: starts and stops the bridge frame that pulls video
-// from the meet-pants app, but only for sites that hold camera permission.
+// from the zoom-mullet-begone app, but only for sites that hold camera permission.
 (() => {
   "use strict";
   const bridges = new Map(); // session -> iframe
@@ -27,7 +27,7 @@
 
   function stop(session) {
     const frame = bridges.get(session);
-    if (frame) frame.remove(); // aborts its stream; meet-pants stops when no tab watches
+    if (frame) frame.remove(); // aborts its stream; zoom-mullet-begone stops when no tab watches
     bridges.delete(session);
     chrome.runtime.sendMessage({ type: "revoke", session }).catch(() => {});
   }
@@ -35,7 +35,7 @@
   window.addEventListener("message", (event) => {
     if (event.source !== window) return;
     const data = event.data;
-    if (!data || data.source !== "meet-pants-page" || typeof data.session !== "string") return;
+    if (!data || data.source !== "zoom-mullet-begone-page" || typeof data.session !== "string") return;
     if (data.type === "start") start(data.session);
     else if (data.type === "stop") stop(data.session);
   });

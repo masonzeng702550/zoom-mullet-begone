@@ -5,10 +5,10 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from meet_pants.config import DebugConfig
-from meet_pants.io.capture import CaptureError, VideoFileSource, open_source
-from meet_pants.io.preview import Stats, render_preview
-from meet_pants.perception.types import NUM_LANDMARKS, Landmark, PoseFrame
+from zoom_mullet_begone.config import DebugConfig
+from zoom_mullet_begone.io.capture import CaptureError, VideoFileSource, open_source
+from zoom_mullet_begone.io.preview import Stats, render_preview
+from zoom_mullet_begone.perception.types import NUM_LANDMARKS, Landmark, PoseFrame
 
 
 def test_video_file_reads_all_frames_with_increasing_timestamps(blank_video: Path) -> None:

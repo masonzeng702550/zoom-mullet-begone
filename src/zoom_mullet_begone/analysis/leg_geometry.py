@@ -16,8 +16,8 @@ from dataclasses import dataclass
 import cv2
 import numpy as np
 
-from meet_pants.perception.segmenter import Segmentation
-from meet_pants.perception.types import Lm, PoseFrame
+from zoom_mullet_begone.perception.segmenter import Segmentation
+from zoom_mullet_begone.perception.types import Lm, PoseFrame
 
 HIP_VISIBLE = 0.5
 CROTCH_DROP = 0.2  # each leg's centerline starts this fraction of the thigh below the hip

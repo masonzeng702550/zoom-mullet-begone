@@ -8,14 +8,14 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from meet_pants.analysis.leg_geometry import LegTracker
-from meet_pants.config import Config
-from meet_pants.perception.pose import PoseDetector
-from meet_pants.perception.segmenter import BodySegmenter
-from meet_pants.perception.types import Lm
-from meet_pants.pipeline import Wardrobe, dress, scene_masks
-from meet_pants.render.compositor import Compositor
-from meet_pants.render.garment import build_pyramid
+from zoom_mullet_begone.analysis.leg_geometry import LegTracker
+from zoom_mullet_begone.config import Config
+from zoom_mullet_begone.perception.pose import PoseDetector
+from zoom_mullet_begone.perception.segmenter import BodySegmenter
+from zoom_mullet_begone.perception.types import Lm
+from zoom_mullet_begone.pipeline import Wardrobe, dress, scene_masks
+from zoom_mullet_begone.render.compositor import Compositor
+from zoom_mullet_begone.render.garment import build_pyramid
 
 
 @pytest.fixture(scope="module")

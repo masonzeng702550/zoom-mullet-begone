@@ -13,9 +13,9 @@ from dataclasses import dataclass
 import cv2
 import numpy as np
 
-from meet_pants.render.garment import TrimLine
-from meet_pants.render.mesh import Mesh
-from meet_pants.render.warp_cv import Layer
+from zoom_mullet_begone.render.garment import TrimLine
+from zoom_mullet_begone.render.mesh import Mesh
+from zoom_mullet_begone.render.warp_cv import Layer
 
 RESAMPLE = 12.0  # texture pixels between mapped points, so lines follow the bends
 SHIFT = 3  # fixed-point bits for sub-pixel line positions

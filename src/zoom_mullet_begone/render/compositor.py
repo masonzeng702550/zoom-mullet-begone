@@ -15,7 +15,7 @@ from dataclasses import dataclass
 import cv2
 import numpy as np
 
-from meet_pants.render.warp_cv import Layer
+from zoom_mullet_begone.render.warp_cv import Layer
 
 LIGHT_GAMMA = 0.6  # how strongly local skin brightness modulates the garment
 LIGHT_RANGE = (0.6, 1.35)

@@ -35,10 +35,10 @@ from pathlib import Path
 import cv2
 import numpy as np
 
-from meet_pants.config import Config
-from meet_pants.pipeline import RunControl, run
-from meet_pants.ui.browser_feed import JPEG_QUALITY
-from meet_pants.ui.settings import GarmentChoice, SettingsHub
+from zoom_mullet_begone.config import Config
+from zoom_mullet_begone.pipeline import RunControl, run
+from zoom_mullet_begone.ui.browser_feed import JPEG_QUALITY
+from zoom_mullet_begone.ui.settings import GarmentChoice, SettingsHub
 
 PREVIEW_EVERY_S = 0.3
 PREVIEW_WIDTH = 480
@@ -66,7 +66,7 @@ def run_in_child(config: Config, control: RunControl, target: Callable[..., int]
     process = ctx.Process(
         target=_child_main,
         args=(target, config, child_conn, hub.choice, sent_version, control.probe is not None, control.probe_after_s),
-        name="meet-pants-pipeline",
+        name="zoom-mullet-begone-pipeline",
         daemon=True,
     )
     process.start()

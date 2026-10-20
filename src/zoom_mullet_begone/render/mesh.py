@@ -12,8 +12,8 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from meet_pants.analysis.leg_geometry import Leg, LegGeometry
-from meet_pants.render.garment import Garment, LegAnchors
+from zoom_mullet_begone.analysis.leg_geometry import Leg, LegGeometry
+from zoom_mullet_begone.render.garment import Garment, LegAnchors
 
 # Fraction of the thigh over which the inner edge leaves the crotch point and
 # joins the thigh's own inner contour.

@@ -20,9 +20,9 @@ from pathlib import Path
 
 import numpy as np
 
-from meet_pants.config import PoseConfig
-from meet_pants.perception.pose import PoseDetector
-from meet_pants.perception.types import Lm, PoseFrame
+from zoom_mullet_begone.config import PoseConfig
+from zoom_mullet_begone.perception.pose import PoseDetector
+from zoom_mullet_begone.perception.types import Lm, PoseFrame
 
 SHOULDER_VISIBLE = 0.5
 # Hips at least this many shoulder widths below the shoulders (real torsos: ~1-1.5).
@@ -93,7 +93,7 @@ class PoseChain:
             if detector.exists() and model.exists():
 
                 def factory() -> object:
-                    from meet_pants.perception.rtmpose import RtmPoseDetector
+                    from zoom_mullet_begone.perception.rtmpose import RtmPoseDetector
 
                     return RtmPoseDetector(detector, model)
             else:

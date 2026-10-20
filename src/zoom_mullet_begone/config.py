@@ -9,10 +9,15 @@ from typing import Any
 import yaml
 from platformdirs import user_config_path
 
-# The OS's place for app settings: ~/Library/Application Support/meet-pants on
-# macOS, %APPDATA%\meet-pants on Windows, ~/.config/meet-pants on Linux.
-DEFAULT_CONFIG_PATH = user_config_path("meet-pants", appauthor=False) / "config.yaml"
-LEGACY_CONFIG_PATH = Path.home() / ".config" / "meet-pants" / "config.yaml"  # before 2026-10
+APP_NAME = "zoom-mullet-begone"
+# The OS's place for app settings: ~/Library/Application Support/zoom-mullet-begone
+# on macOS, %APPDATA%\zoom-mullet-begone on Windows, ~/.config/zoom-mullet-begone on Linux.
+DEFAULT_CONFIG_PATH = user_config_path(APP_NAME, appauthor=False) / "config.yaml"
+# Where earlier versions (named meet-pants) kept it, newest first; moved on first start.
+LEGACY_CONFIG_PATHS = (
+    user_config_path("meet-pants", appauthor=False) / "config.yaml",
+    Path.home() / ".config" / "meet-pants" / "config.yaml",
+)
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_MODELS_DIR = PROJECT_ROOT / "models"
 DEFAULT_GARMENTS_DIR = PROJECT_ROOT / "garments"
@@ -167,11 +172,17 @@ def load_config(path: Path | None = None, overrides: dict[str, Any] | None = Non
     return config
 
 
-def migrate_legacy_config(legacy: Path = LEGACY_CONFIG_PATH, current: Path = DEFAULT_CONFIG_PATH) -> bool:
-    """Move a config file from the old fixed location to the OS's settings folder.
-    Returns True if it moved. Does nothing if both are the same (Linux) or the new
-    file already exists."""
-    if legacy == current or not legacy.is_file() or current.exists():
+def migrate_legacy_config(
+    legacy: Path | tuple[Path, ...] = LEGACY_CONFIG_PATHS, current: Path = DEFAULT_CONFIG_PATH
+) -> bool:
+    """Move the config file of an earlier version to the current location (the first
+    of `legacy` that exists). Returns True if it moved. Never overwrites an existing
+    current file."""
+    if current.exists():
+        return False
+    candidates = (legacy,) if isinstance(legacy, Path) else legacy
+    legacy = next((p for p in candidates if p != current and p.is_file()), None)
+    if legacy is None:
         return False
     current.parent.mkdir(parents=True, exist_ok=True)
     current.write_bytes(legacy.read_bytes())

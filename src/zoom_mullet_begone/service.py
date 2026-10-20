@@ -1,6 +1,6 @@
 """Background mode: start the pants when a meeting opens the camera.
 
-A meeting can use meet-pants two ways: through the virtual camera (OBS
+A meeting can use zoom-mullet-begone two ways: through the virtual camera (OBS
 Virtual Camera, any app) or through the browser extension (web pages only, no
 driver needed). Without OBS the service serves the extension alone.
 
@@ -11,7 +11,7 @@ States:
     active   the pipeline runs (camera on, frames to the virtual camera)
     paused   automatic start turned off from the menu
 
-While active, meet-pants' own frames keep the virtual camera "in use", so the
+While active, zoom-mullet-begone' own frames keep the virtual camera "in use", so the
 service cannot see a meeting app leave. When nobody has been in view for a
 minute, it stops sending for a moment and checks again (RunControl.probe);
 with nobody in view, the brief OBS placeholder the meeting sees is harmless.
@@ -36,11 +36,11 @@ from pathlib import Path
 
 import numpy as np
 
-from meet_pants.config import Config
-from meet_pants.io.camwatch import CameraWatcher
-from meet_pants.pipeline import RunControl
-from meet_pants.ui.settings import GarmentChoice, SettingsHub, SettingsServer
-from meet_pants.worker import PREVIEW_EVERY_S, preview_jpeg, run_in_child
+from zoom_mullet_begone.config import Config
+from zoom_mullet_begone.io.camwatch import CameraWatcher
+from zoom_mullet_begone.pipeline import RunControl
+from zoom_mullet_begone.ui.settings import GarmentChoice, SettingsHub, SettingsServer
+from zoom_mullet_begone.worker import PREVIEW_EVERY_S, preview_jpeg, run_in_child
 
 POLL_S = 0.5
 PROBE_SETTLE_S = 0.15  # after closing our output, before reading the in-use flag
@@ -48,7 +48,7 @@ RETRY_AFTER_ERROR_S = 5.0
 BROWSER_GRACE_S = 3.0  # keep running this long after the last browser tab leaves (reloads, device switches)
 
 STATUS_TEXT = {
-    "waiting": "待命中：會議打開 meet-pants 鏡頭時會自動開始",
+    "waiting": "待命中：會議打開 Zoom Mullet Begone 鏡頭時會自動開始",
     "starting": "啟動中…",
     "active": "執行中：正在套用褲子",
     "paused": "已暫停自動啟動",
@@ -84,7 +84,7 @@ class BackgroundService:
         self._quit = threading.Event()
         self._control: RunControl | None = None
         self._last_preview = 0.0
-        self._thread = threading.Thread(target=self._loop, name="meet-pants-service", daemon=True)
+        self._thread = threading.Thread(target=self._loop, name="zoom-mullet-begone-service", daemon=True)
 
     # -- lifecycle ---------------------------------------------------------
 
@@ -134,7 +134,7 @@ class BackgroundService:
             control.stop.set()
 
     def _vcam_works(self) -> bool:
-        from meet_pants.io.virtualcam import VirtualCam, VirtualCamError
+        from zoom_mullet_begone.io.virtualcam import VirtualCam, VirtualCamError
 
         width, height = self.config.resolution
         try:

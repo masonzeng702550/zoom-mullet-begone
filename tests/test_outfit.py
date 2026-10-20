@@ -8,7 +8,7 @@ import numpy as np
 import pytest
 from helpers import make_pose, standing_points
 
-from meet_pants.analysis.outfit import (
+from zoom_mullet_begone.analysis.outfit import (
     SWITCH_MS,
     WARMUP_SAMPLES,
     OutfitMatcher,
@@ -17,9 +17,9 @@ from meet_pants.analysis.outfit import (
     sample_top_color,
     texture_color,
 )
-from meet_pants.perception.segmenter import BODY_SKIN, CLOTHES, Segmentation
-from meet_pants.perception.types import Lm, PoseFrame
-from meet_pants.render.garment import list_garments, load_garment
+from zoom_mullet_begone.perception.segmenter import BODY_SKIN, CLOTHES, Segmentation
+from zoom_mullet_begone.perception.types import Lm, PoseFrame
+from zoom_mullet_begone.render.garment import list_garments, load_garment
 
 GARMENTS_DIR = Path(__file__).resolve().parents[1] / "garments"
 
