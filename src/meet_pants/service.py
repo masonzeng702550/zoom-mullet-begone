@@ -20,6 +20,9 @@ If no app reads the camera any more, it goes back to waiting.
 Browser tabs are exact: the run ends a few seconds after the last tab stops
 reading. Where the watcher is not supported (not macOS) but a virtual camera
 works, the service runs the pipeline all the time to feed it.
+
+Each run happens in a child process (worker.run_in_child), so the models'
+memory goes back to the OS when it ends.
 """
 
 from __future__ import annotations
@@ -31,18 +34,16 @@ from collections.abc import Callable
 from dataclasses import replace
 from pathlib import Path
 
-import cv2
 import numpy as np
 
 from meet_pants.config import Config
 from meet_pants.io.camwatch import CameraWatcher
-from meet_pants.pipeline import RunControl, run
+from meet_pants.pipeline import RunControl
 from meet_pants.ui.settings import GarmentChoice, SettingsHub, SettingsServer
+from meet_pants.worker import PREVIEW_EVERY_S, preview_jpeg, run_in_child
 
 POLL_S = 0.5
 PROBE_SETTLE_S = 0.15  # after closing our output, before reading the in-use flag
-PREVIEW_EVERY_S = 0.3
-PREVIEW_WIDTH = 480
 RETRY_AFTER_ERROR_S = 5.0
 BROWSER_GRACE_S = 3.0  # keep running this long after the last browser tab leaves (reloads, device switches)
 
@@ -61,7 +62,7 @@ class BackgroundService:
         config: Config,
         settings_path: Path | None,
         watcher: CameraWatcher | None = None,
-        runner: Callable[..., int] = run,
+        runner: Callable[..., int] = run_in_child,
         vcam_check: Callable[[], bool] | None = None,
     ):
         # The service owns the output: no preview window, frames to the virtual camera.
@@ -210,8 +211,6 @@ class BackgroundService:
         if now - self._last_preview < PREVIEW_EVERY_S:
             return
         self._last_preview = now
-        h, w = frame.shape[:2]
-        small = cv2.resize(frame, (PREVIEW_WIDTH, round(h * PREVIEW_WIDTH / w)), interpolation=cv2.INTER_AREA)
-        ok, jpeg = cv2.imencode(".jpg", small, [cv2.IMWRITE_JPEG_QUALITY, 70])
-        if ok:
-            self.hub.set_preview(jpeg.tobytes())
+        jpeg = preview_jpeg(frame)
+        if jpeg is not None:
+            self.hub.set_preview(jpeg)

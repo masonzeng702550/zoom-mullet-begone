@@ -65,10 +65,15 @@ class FrameFeed:
         if self.clients == 0:
             return
         ok, jpeg = cv2.imencode(".jpg", frame, [cv2.IMWRITE_JPEG_QUALITY, JPEG_QUALITY])
-        if not ok:
-            return
+        if ok:
+            self.publish_jpeg(jpeg.tobytes())
+
+    def publish_jpeg(self, jpeg: bytes) -> None:
+        """Hand out a frame already encoded (by the pipeline's process)."""
         with self._cond:
-            self._jpeg = jpeg.tobytes()
+            if self._clients == 0:
+                return
+            self._jpeg = jpeg
             self._seq += 1
             self._cond.notify_all()
 
