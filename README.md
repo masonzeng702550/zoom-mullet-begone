@@ -18,7 +18,7 @@ Three garments are included: navy dress trousers, khaki chinos and indigo jeans.
 
 ## Status
 
-- Developed and tested on macOS (Apple silicon).
+- Developed and tested on macOS (Apple silicon). The browser extension has been tested in Google Meet.
 - Windows and Linux should work, but they have not been tested yet. On them, background mode knows when a browser tab uses the meet-pants camera, but not when a desktop app opens a virtual camera.
 - The browser extension works in Chromium-based browsers (Chrome, Edge, Arc, Brave). Safari and Firefox are not supported yet.
 - The pants are always on while your hips are in view. Automatic detection of "not wearing pants" is planned.
@@ -81,10 +81,12 @@ The extension in `browser-extension/` adds a camera named **meet-pants** to ever
 **Privacy and safety:**
 
 - A site gets the meet-pants camera only if it already has permission to use your camera, exactly like a real camera.
-- The video goes from meet-pants to the browser over 127.0.0.1 and never leaves your computer. meet-pants accepts that connection only from browser extensions (the `Origin` header web pages cannot forge), so a website cannot read your camera through it.
+- The video goes from meet-pants to the browser over 127.0.0.1 and never leaves your computer. meet-pants accepts that connection only from browser extensions, recognized by request headers that web pages cannot set (`Sec-Fetch-Site`, or an extension `Origin`), so a website cannot read your camera through it.
 - In background mode meet-pants starts when a tab picks the meet-pants camera and stops about 3 seconds after the tab releases it.
 
 Desktop apps (Zoom, Teams, FaceTime) cannot see the extension's camera; for them you still need the virtual camera driver.
+
+**If the picture says 找不到 meet-pants (meet-pants not found)**, meet-pants is not running or is using another port. Start it; the tab reconnects by itself within 2 seconds. When the tab connects, the terminal prints `browser stream: a tab connected`.
 
 ## Using it in meetings and websites
 
@@ -113,7 +115,7 @@ The menu bar icon is outlined while waiting and filled while in use.
 
 On Windows and Linux, background mode cannot yet tell when a desktop app opens the virtual camera: with a virtual camera driver installed it runs all the time; without one it serves only the browser extension and starts and stops with your tabs.
 
-Each run happens in a separate process that exits when the run ends, so memory use goes back to about 170 MB afterwards.
+Each run happens in a separate process that exits when the run ends, so memory use goes back to about 150 MB afterwards.
 
 ## Settings page
 
@@ -180,9 +182,9 @@ Measured on an M4 Pro MacBook Pro with a 720p camera at 30 fps:
 
 | Situation | CPU | Memory |
 |---|---|---|
-| Background mode, waiting (before the first run) | about 0% | about 170 MB |
-| Background mode, waiting (after a run) | about 0% | about 180 MB |
-| Running, upper body in view | about 30–40% | about 650 MB |
+| Background mode, waiting (before the first run) | about 0% | about 200 MB |
+| Background mode, running | about 30–40% | about 700 MB |
+| Background mode, waiting (after a run) | about 0% | about 150 MB |
 
 How it stays light:
 
