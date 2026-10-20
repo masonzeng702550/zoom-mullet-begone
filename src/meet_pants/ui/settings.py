@@ -25,8 +25,10 @@ import numpy as np
 import yaml
 
 from meet_pants.render.garment import GarmentError, list_garments, load_garment, parse_color, recolor_texture
+from meet_pants.ui.browser_feed import FrameFeed, is_extension_origin
 
 PAGE = Path(__file__).with_name("settings.html")
+MJPEG_BOUNDARY = "meetpantsframe"
 THUMB_SIZE = (120, 180)  # w, h
 PRESET_COLORS = (
     ("黑", "#1c1c1c"),
@@ -95,6 +97,7 @@ class SettingsHub:
         # the latest output frame for the page's live preview
         self.status = ""
         self._preview: bytes | None = None
+        self.feed = FrameFeed()  # live video for the browser extension
 
     def set_preview(self, jpeg: bytes | None) -> None:
         with self._lock:
@@ -194,6 +197,8 @@ def _handler(hub: SettingsHub) -> type[BaseHTTPRequestHandler]:
                 self._send(200, PAGE.read_bytes(), "text/html; charset=utf-8")
             elif url.path == "/api/settings":
                 self._json(200, hub.state())
+            elif url.path == "/stream.mjpg":
+                self._stream()
             elif url.path == "/live.jpg":
                 jpeg = hub.preview()
                 if jpeg is None:
@@ -215,6 +220,34 @@ def _handler(hub: SettingsHub) -> type[BaseHTTPRequestHandler]:
                     self._send(400, str(e).encode(), "text/plain; charset=utf-8")
             else:
                 self._send(404, b"not found", "text/plain")
+
+        def _stream(self) -> None:
+            """MJPEG for the browser extension; only extensions may read it."""
+            if not is_extension_origin(self.headers.get("Origin")):
+                self._send(403, b"only the meet-pants browser extension may read the stream", "text/plain")
+                return
+            self.send_response(200)
+            self.send_header("Content-Type", f"multipart/x-mixed-replace; boundary={MJPEG_BOUNDARY}")
+            self.send_header("Cache-Control", "no-store")
+            self.end_headers()
+            hub.feed.connect()
+            seq = 0
+            try:
+                while not hub.feed.closed:
+                    item = hub.feed.next_frame(seq)
+                    if item is None:
+                        continue
+                    seq, jpeg = item
+                    self.wfile.write(
+                        f"--{MJPEG_BOUNDARY}\r\nContent-Type: image/jpeg\r\nContent-Length: {len(jpeg)}\r\n\r\n".encode()
+                        + jpeg
+                        + b"\r\n"
+                    )
+                    self.wfile.flush()
+            except (BrokenPipeError, ConnectionResetError):
+                pass  # the page closed the camera
+            finally:
+                hub.feed.disconnect()
 
         def do_POST(self) -> None:
             if not self._same_origin():
@@ -242,6 +275,7 @@ def _handler(hub: SettingsHub) -> type[BaseHTTPRequestHandler]:
 
 class SettingsServer:
     def __init__(self, hub: SettingsHub, port: int):
+        self._hub = hub
         self._httpd = ThreadingHTTPServer(("127.0.0.1", port), _handler(hub))  # port 0: any free port
         self._httpd.daemon_threads = True
         self.url = f"http://127.0.0.1:{self._httpd.server_address[1]}/"
@@ -255,6 +289,7 @@ class SettingsServer:
         webbrowser.open(self.url)
 
     def close(self) -> None:
+        self._hub.feed.close()  # ends open browser streams
         self._httpd.shutdown()
         self._httpd.server_close()
 

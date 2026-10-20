@@ -72,6 +72,9 @@ class RunControl:
     # app still reads the camera; with nobody in view, the brief gap is harmless.
     probe: Callable[[], bool] | None = None
     probe_after_s: float = 60.0
+    # Checked every frame: False ends the run (e.g. the last browser tab closed
+    # its camera and there is no virtual camera to feed).
+    keep_running: Callable[[], bool] | None = None
 
 
 class Wardrobe:
@@ -259,7 +262,9 @@ def run(
 
         try:
             while max_frames is None or frames < max_frames:
-                if control is not None and control.stop.is_set():
+                if control is not None and (
+                    control.stop.is_set() or (control.keep_running is not None and not control.keep_running())
+                ):
                     break
                 frame = source.read()
                 if frame is None:
@@ -311,6 +316,8 @@ def run(
 
                 if vcam is not None:
                     vcam.send(output)
+                if control is None:
+                    hub.feed.publish(output)  # browser extension tabs (no-op without any)
                 if control is not None:
                     if control.on_frame is not None:
                         control.on_frame(output)

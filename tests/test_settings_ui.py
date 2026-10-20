@@ -112,3 +112,58 @@ def test_server_applies_and_saves(tmp_path: Path) -> None:
         assert status == 403 and hub.choice.auto is False
         status, _ = _request(server.url + "api/settings", {"color": "red"}, server.url[:-1])
         assert status == 400
+
+
+def test_browser_stream_only_for_extensions(tmp_path: Path) -> None:
+    import http.client
+    import threading
+    import time as _time
+
+    hub = SettingsHub(GARMENTS, GarmentChoice("dress_navy", "", True), None)
+    with SettingsServer(hub, 0) as server:
+        port = int(server.url.rsplit(":", 1)[1].strip("/"))
+
+        def get(origin: str | None) -> http.client.HTTPResponse:
+            conn = http.client.HTTPConnection("127.0.0.1", port, timeout=5)
+            headers = {"Origin": origin} if origin else {}
+            conn.request("GET", "/stream.mjpg", headers=headers)
+            return conn.getresponse()
+
+        # Websites (and requests without an Origin) cannot read the camera.
+        for origin in (None, "https://meet.google.com", "http://127.0.0.1:%d" % port):
+            r = get(origin)
+            assert r.status == 403
+            r.read()
+        assert hub.feed.clients == 0
+
+        r = get("chrome-extension://abcdefghijklmnop")
+        assert r.status == 200
+        assert r.getheader("Content-Type").startswith("multipart/x-mixed-replace")
+        assert wait_until(lambda: hub.feed.clients == 1)
+
+        frame = np.zeros((72, 128, 3), np.uint8)
+        stop = threading.Event()
+
+        def publish() -> None:
+            while not stop.is_set():
+                hub.feed.publish(frame)
+                _time.sleep(0.02)
+
+        threading.Thread(target=publish, daemon=True).start()
+        head = r.read(200)
+        stop.set()
+        assert head.startswith(b"--meetpantsframe\r\nContent-Type: image/jpeg\r\nContent-Length: ")
+        assert b"\xff\xd8" in head  # JPEG start
+        r.close()
+    assert hub.feed.closed
+
+
+def wait_until(condition, timeout: float = 3.0) -> bool:
+    import time as _time
+
+    end = _time.time() + timeout
+    while _time.time() < end:
+        if condition():
+            return True
+        _time.sleep(0.02)
+    return False

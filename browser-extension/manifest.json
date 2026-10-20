@@ -1,0 +1,30 @@
+{
+  "manifest_version": 3,
+  "name": "meet-pants camera",
+  "version": "0.1.0",
+  "description": "Adds a \"meet-pants\" camera to web pages (Google Meet and others), fed by the meet-pants app on this computer. No virtual camera driver needed.",
+  "minimum_chrome_version": "111",
+  "permissions": ["storage"],
+  "host_permissions": ["http://127.0.0.1/*"],
+  "background": { "service_worker": "background.js" },
+  "content_scripts": [
+    {
+      "matches": ["https://*/*", "http://localhost/*", "http://127.0.0.1/*"],
+      "js": ["inject.js"],
+      "world": "MAIN",
+      "run_at": "document_start",
+      "all_frames": true
+    },
+    {
+      "matches": ["https://*/*", "http://localhost/*", "http://127.0.0.1/*"],
+      "js": ["content.js"],
+      "run_at": "document_start",
+      "all_frames": true
+    }
+  ],
+  "web_accessible_resources": [
+    { "resources": ["bridge.html"], "matches": ["https://*/*", "http://localhost/*", "http://127.0.0.1/*"] }
+  ],
+  "action": { "default_popup": "popup.html", "default_icon": { "16": "icons/16.png", "48": "icons/48.png" } },
+  "icons": { "16": "icons/16.png", "48": "icons/48.png", "128": "icons/128.png" }
+}

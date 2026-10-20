@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<title>meet-pants</title>
+<style>
+  :root { --bg: #fff; --text: #1d1d1f; --muted: #6e6e73; --line: #dcdad4; --accent: #2f5bea; --ok: #1e8e3e; --bad: #c0392b; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #222224; --text: #f2f2f2; --muted: #9a9aa0; --line: #38383c; --accent: #7c9cff; --ok: #6fd28a; --bad: #ff7b6b; }
+  }
+  body { margin: 0; width: 280px; padding: 14px 16px; background: var(--bg); color: var(--text);
+         font: 13px/1.5 -apple-system, BlinkMacSystemFont, "PingFang TC", "Noto Sans TC", sans-serif; }
+  h1 { font-size: 15px; margin: 0 0 8px; }
+  #state { font-weight: 600; }
+  #state.ok { color: var(--ok); }
+  #state.bad { color: var(--bad); }
+  p { margin: 8px 0; color: var(--muted); }
+  a { color: var(--accent); }
+  label { display: flex; gap: 8px; align-items: center; margin-top: 10px; color: var(--muted); }
+  input { width: 70px; padding: 2px 6px; border: 1px solid var(--line); border-radius: 6px; background: transparent; color: inherit; }
+</style>
+</head>
+<body>
+  <h1>meet-pants</h1>
+  <div id="state">檢查中…</div>
+  <p id="detail"></p>
+  <p>在會議的鏡頭設定中選擇「meet-pants」即可使用。</p>
+  <p><a id="settings" href="#" target="_blank">開啟褲子設定</a></p>
+  <label>連接埠 <input id="port" type="number" min="1" max="65535"></label>
+  <script src="popup.js"></script>
+</body>
+</html>

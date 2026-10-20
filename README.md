@@ -11,22 +11,26 @@ Virtual pants for video calls. meet-pants tracks your legs with a pose model, dr
 - **Works up close**: when you sit so close that only your waist and legs are in view, a second pose model takes over.
 - **Matches your shirt**: picks the pants style and color that go with your top, or use the one you choose.
 - **Settings page**: pick the style and color in a local web page, with a live view of what the meeting sees.
-- **Background mode (macOS)**: lives in the menu bar and turns on only while a meeting app uses the camera.
+- **Browser extension**: adds a "meet-pants" camera to Google Meet and other websites in Chrome, Edge or Arc, with no camera driver to install.
+- **Background mode**: lives in the menu bar and turns on only while a meeting uses the camera.
 
 Three garments are included: navy dress trousers, khaki chinos and indigo jeans. Any of them can be recolored.
 
 ## Status
 
 - Developed and tested on macOS (Apple silicon).
-- Windows and Linux should work in the regular (foreground) mode with the virtual cameras listed below, but they have not been tested yet. Background mode cannot detect meetings on them yet.
+- Windows and Linux should work, but they have not been tested yet. On them, background mode knows when a browser tab uses the meet-pants camera, but not when a desktop app opens a virtual camera.
+- The browser extension works in Chromium-based browsers (Chrome, Edge, Arc, Brave). Safari and Firefox are not supported yet.
 - The pants are always on while your hips are in view. Automatic detection of "not wearing pants" is planned.
 
 ## Requirements
 
 - Python 3.11 or 3.12
-- A virtual camera driver:
-  - **macOS / Windows**: [OBS Studio](https://obsproject.com/) 30 or newer. Open it once, click **Start Virtual Camera**, then quit OBS. meet-pants uses the camera driver OBS installs; OBS itself does not need to run.
-  - **Linux**: [v4l2loopback](https://github.com/umlaeute/v4l2loopback) (`sudo modprobe v4l2loopback exclusive_caps=1` so Chrome lists it).
+- A way to get the video into your meeting, one or both of:
+  - **The browser extension** (web meetings such as Google Meet; nothing else to install): see [Browser extension](#browser-extension-no-obs).
+  - **A virtual camera driver** (every app, including Zoom and Teams desktop apps):
+    - **macOS / Windows**: [OBS Studio](https://obsproject.com/) 30 or newer. Open it once, click **Start Virtual Camera**, then quit OBS. meet-pants uses the camera driver OBS installs; OBS itself does not need to run.
+    - **Linux**: [v4l2loopback](https://github.com/umlaeute/v4l2loopback) (`sudo modprobe v4l2loopback exclusive_caps=1` so Chrome lists it).
 
 ## Setup
 
@@ -48,7 +52,7 @@ On macOS the first run asks for camera access for your terminal app.
 .venv/bin/python -m meet_pants --background
 ```
 
-A pants icon appears in the menu bar. Join a meeting and choose **OBS Virtual Camera** as the camera; the pants appear about 2.5 seconds later.
+A pants icon appears in the menu bar. Join a meeting and choose **meet-pants** (browser extension) or **OBS Virtual Camera** as the camera; the pants appear about 2.5 seconds later.
 
 **Foreground mode (all systems):**
 
@@ -58,9 +62,33 @@ A pants icon appears in the menu bar. Join a meeting and choose **OBS Virtual Ca
 
 This opens a preview window and sends the video to the virtual camera right away.
 
+## Browser extension (no OBS)
+
+The extension in `browser-extension/` adds a camera named **meet-pants** to every website. Pick it in Google Meet (or any other site) and the site receives meet-pants' video. No virtual camera driver is needed, so this works without OBS.
+
+**Install (Chrome, Edge, Arc, Brave):**
+
+1. Open `chrome://extensions` (Edge: `edge://extensions`).
+2. Turn on **Developer mode**.
+3. Click **Load unpacked** and choose the `browser-extension` folder of this repository.
+
+**Use:**
+
+1. Start meet-pants, preferably in background mode: `.venv/bin/python -m meet_pants --background`.
+2. In Google Meet: Settings → Video → Camera → **meet-pants**. Other sites list it wherever you choose a camera.
+3. The extension's toolbar button shows whether meet-pants is running and links to the settings page.
+
+**Privacy and safety:**
+
+- A site gets the meet-pants camera only if it already has permission to use your camera, exactly like a real camera.
+- The video goes from meet-pants to the browser over 127.0.0.1 and never leaves your computer. meet-pants accepts that connection only from browser extensions (the `Origin` header web pages cannot forge), so a website cannot read your camera through it.
+- In background mode meet-pants starts when a tab picks the meet-pants camera and stops about 3 seconds after the tab releases it.
+
+Desktop apps (Zoom, Teams, FaceTime) cannot see the extension's camera; for them you still need the virtual camera driver.
+
 ## Using it in meetings and websites
 
-meet-pants sends its video to **OBS Virtual Camera**, which the system lists as a normal camera next to the built-in one. Anything that lets you pick a camera can use it:
+With the virtual camera driver, meet-pants sends its video to **OBS Virtual Camera**, which the system lists as a normal camera next to the built-in one. Anything that lets you pick a camera can use it:
 
 - **Google Meet** (any browser): Settings → Video → Camera → *OBS Virtual Camera*.
 - **Other websites in Chrome, Edge or Arc**: use the camera icon in the address bar, or choose it once for all sites at `chrome://settings/content/camera`.
@@ -69,7 +97,7 @@ meet-pants sends its video to **OBS Virtual Camera**, which the system lists as 
 
 meet-pants cannot take over apps that keep using the built-in camera: macOS lets every app open the real camera directly and offers no way to replace it system-wide. When meet-pants is not running, the virtual camera shows the OBS placeholder image.
 
-## Background mode (macOS)
+## Background mode
 
 ```bash
 .venv/bin/python -m meet_pants --background
@@ -77,12 +105,15 @@ meet-pants cannot take over apps that keep using the built-in camera: macOS lets
 
 The menu bar icon is outlined while waiting and filled while in use.
 
-- **Waiting**: the camera is off and almost nothing runs (about 0% CPU and 170 MB of memory). Twice a second meet-pants asks macOS (CoreMediaIO) whether an app has opened *OBS Virtual Camera*.
-- **A meeting opens the camera**: meet-pants turns on your camera, and the pants appear about 2.5 seconds later. Until then the meeting shows the OBS placeholder.
-- **The meeting closes the camera**: meet-pants' own video keeps the virtual camera marked as "in use", so it cannot see this directly. After nobody has been in front of the camera for a minute, it stops sending for a moment and checks again. If no app is reading the camera, it turns your camera off and goes back to waiting. If you stay at your desk after the meeting, it keeps running until you leave, quit it, or turn off auto start in the menu.
+- **Waiting**: the camera is off and almost nothing runs (about 0% CPU). Twice a second meet-pants checks whether a browser tab picked the meet-pants camera, and on macOS whether an app opened *OBS Virtual Camera* (through CoreMediaIO).
+- **A meeting opens the camera**: meet-pants turns on your camera, and the pants appear about 2.5 seconds later.
+- **A browser tab releases the camera**: meet-pants stops about 3 seconds later. A run started by a browser tab does not touch OBS Virtual Camera.
+- **A desktop app closes OBS Virtual Camera**: meet-pants' own video keeps the virtual camera marked as "in use", so it cannot see this directly. After nobody has been in front of the camera for a minute, it stops sending for a moment and checks again. If no app is reading the camera, it turns your camera off and goes back to waiting. If you stay at your desk after the meeting, it keeps running until you leave, quit it, or turn off auto start in the menu.
 - **Menu**: the current status, 開啟設定… (open settings), 會議開鏡頭時自動套用 (auto start when a meeting opens the camera) and 結束 meet-pants (quit).
 
-On Windows and Linux, `--background` cannot tell when a meeting opens the camera yet, so it runs all the time.
+On Windows and Linux, background mode cannot yet tell when a desktop app opens the virtual camera: with a virtual camera driver installed it runs all the time; without one it serves only the browser extension and starts and stops with your tabs.
+
+After a run, memory use stays at about 700 MB until meet-pants quits (Python keeps the memory it used).
 
 ## Settings page
 
@@ -101,7 +132,7 @@ The settings page and the menu bar are in Traditional Chinese for now. The page 
 
 | Option | Meaning |
 |---|---|
-| `--background` | Run from the menu bar and start when a meeting opens the virtual camera (macOS) |
+| `--background` | Run from the menu bar and start when a meeting opens the camera |
 | `--settings` | Open only the settings page, without the camera |
 | `--input 1` / `--input clip.mp4` | Camera index or video file |
 | `--resolution 1280x720`, `--fps 30` | Capture size and frame rate |
@@ -149,7 +180,8 @@ Measured on an M4 Pro MacBook Pro with a 720p camera at 30 fps:
 
 | Situation | CPU | Memory |
 |---|---|---|
-| Background mode, waiting | about 0% | about 170 MB |
+| Background mode, waiting (before the first run) | about 0% | about 170 MB |
+| Background mode, waiting (after a run) | about 0% | about 700 MB |
 | Running, upper body in view | about 30–40% | about 650 MB |
 
 How it stays light:
@@ -176,6 +208,7 @@ To use even less: `--fps 24` (or 20), and `--no-preview` or background mode.
 
 ```bash
 .venv/bin/python -m pytest
+node tests/js/mjpeg.test.js   # browser extension
 ```
 
 Tests that need the models or the private test footage in `data/` are skipped when those files are missing. Videos recorded with `--record` stay in `data/`, which is not committed.

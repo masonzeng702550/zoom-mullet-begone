@@ -1,8 +1,13 @@
-"""Background mode: start the pants when a meeting app opens the virtual camera.
+"""Background mode: start the pants when a meeting opens the camera.
+
+A meeting can use meet-pants two ways: through the virtual camera (OBS
+Virtual Camera, any app) or through the browser extension (web pages only, no
+driver needed). Without OBS the service serves the extension alone.
 
 States:
     waiting  camera off, nothing sent; checks twice a second whether any app
-             opened the virtual camera (CameraWatcher)
+             opened the virtual camera (CameraWatcher) or a browser tab is
+             reading the extension stream
     active   the pipeline runs (camera on, frames to the virtual camera)
     paused   automatic start turned off from the menu
 
@@ -12,8 +17,9 @@ minute, it stops sending for a moment and checks again (RunControl.probe);
 with nobody in view, the brief OBS placeholder the meeting sees is harmless.
 If no app reads the camera any more, it goes back to waiting.
 
-Where the watcher is not supported (not macOS, or no virtual camera), the
-service runs the pipeline as soon as it starts.
+Browser tabs are exact: the run ends a few seconds after the last tab stops
+reading. Where the watcher is not supported (not macOS) but a virtual camera
+works, the service runs the pipeline all the time to feed it.
 """
 
 from __future__ import annotations
@@ -38,9 +44,10 @@ PROBE_SETTLE_S = 0.15  # after closing our output, before reading the in-use fla
 PREVIEW_EVERY_S = 0.3
 PREVIEW_WIDTH = 480
 RETRY_AFTER_ERROR_S = 5.0
+BROWSER_GRACE_S = 3.0  # keep running this long after the last browser tab leaves (reloads, device switches)
 
 STATUS_TEXT = {
-    "waiting": "待命中：會議軟體打開 OBS Virtual Camera 時會自動開始",
+    "waiting": "待命中：會議打開 meet-pants 鏡頭時會自動開始",
     "starting": "啟動中…",
     "active": "執行中：正在套用褲子",
     "paused": "已暫停自動啟動",
@@ -55,17 +62,20 @@ class BackgroundService:
         settings_path: Path | None,
         watcher: CameraWatcher | None = None,
         runner: Callable[..., int] = run,
+        vcam_check: Callable[[], bool] | None = None,
     ):
         # The service owns the output: no preview window, frames to the virtual camera.
         self.config = replace(config, preview=False, vcam=True)
         self.watcher = watcher or CameraWatcher()
         self._runner = runner
+        self._vcam_check = vcam_check or self._vcam_works
         self.hub = SettingsHub(
             Path(config.garments_dir),
             GarmentChoice(config.garment, config.garment_color, config.garment_auto),
             settings_path,
         )
         self.server: SettingsServer | None = None
+        self.vcam_available = False
         self.state = "waiting"
         self.auto_start = True
         self.sessions = 0
@@ -84,7 +94,11 @@ class BackgroundService:
                 print(f"settings page: {self.server.url}")
             except OSError as e:
                 print(f"settings page off: port {self.config.settings_port} unavailable ({e})", file=sys.stderr)
-        if not self.watcher.supported or self.watcher.in_use() is None:
+        self.vcam_available = self._vcam_check()
+        self.config = replace(self.config, vcam=self.vcam_available)
+        if not self.vcam_available:
+            print("no virtual camera (OBS not installed?): serving the browser extension only")
+        elif self.watcher.in_use() is None:
             print("cannot tell when a meeting opens the virtual camera here; running all the time")
         self._set_state("waiting")
         self._thread.start()
@@ -118,9 +132,31 @@ class BackgroundService:
         if control is not None:
             control.stop.set()
 
+    def _vcam_works(self) -> bool:
+        from meet_pants.io.virtualcam import VirtualCam, VirtualCamError
+
+        width, height = self.config.resolution
+        try:
+            VirtualCam(width, height, self.config.fps).close()
+            return True
+        except VirtualCamError:
+            return False
+
+    def _browser_watching(self) -> bool:
+        feed = self.hub.feed
+        return feed.clients > 0 or time.monotonic() - feed.idle_since < BROWSER_GRACE_S
+
+    def _browser_only_watching(self) -> bool:
+        """For a browser-only run: tabs still watch, and no app opened the virtual camera."""
+        return self._browser_watching() and not (self.vcam_available and self.watcher.in_use())
+
     def _meeting_wants_camera(self) -> bool:
+        if self.hub.feed.clients > 0:
+            return True
+        if not self.vcam_available:
+            return False
         used = self.watcher.in_use()
-        return True if used is None else used  # unknown: always on
+        return True if used is None else used  # unknown: always on to feed the virtual camera
 
     def _loop(self) -> None:
         while not self._quit.is_set():
@@ -131,15 +167,23 @@ class BackgroundService:
 
     def _session(self) -> None:
         self._set_state("starting")
-        self._control = RunControl(
-            hub=self.hub,
-            on_frame=self._preview,
-            probe=self._probe if self.watcher.in_use() is not None else None,
-        )
+        used = self.watcher.in_use()
+        # Feed the virtual camera only when an app reads it (or where that cannot
+        # be told). A run started by browser tabs alone leaves it closed, so its
+        # in-use flag keeps showing real readers: the run then ends exactly when
+        # the tabs are gone, and restarts with the virtual camera if an app opens it.
+        feed_vcam = self.vcam_available and (used is None or used)
+        if feed_vcam:
+            control = RunControl(
+                hub=self.hub, on_frame=self._on_frame, probe=self._probe if used is not None else None
+            )
+        else:
+            control = RunControl(hub=self.hub, on_frame=self._on_frame, keep_running=self._browser_only_watching)
+        self._control = control
         self.sessions += 1
         try:
             self._set_state("active")
-            status = self._runner(self.config, control=self._control)
+            status = self._runner(replace(self.config, vcam=feed_vcam), control=control)
         except Exception as e:  # keep the service alive; the next meeting tries again
             print(f"pipeline failed: {e!r}", file=sys.stderr)
             status = 1
@@ -154,7 +198,12 @@ class BackgroundService:
     def _probe(self) -> bool:
         """Called with our output closed: does any app still read the virtual camera?"""
         time.sleep(PROBE_SETTLE_S)
-        return bool(self.watcher.in_use()) and self.auto_start and not self._quit.is_set()
+        watched = bool(self.watcher.in_use()) or self.hub.feed.clients > 0
+        return watched and self.auto_start and not self._quit.is_set()
+
+    def _on_frame(self, frame: np.ndarray) -> None:
+        self.hub.feed.publish(frame)
+        self._preview(frame)
 
     def _preview(self, frame: np.ndarray) -> None:
         now = time.perf_counter()
