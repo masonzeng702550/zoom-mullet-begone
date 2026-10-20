@@ -34,6 +34,10 @@ class PoseConfig:
     # Run the skin/clothes segmenter on every Nth frame (its mask is reused in
     # between). It is the most expensive model; legs barely move in 1/15 s.
     segment_every: int = 2
+    # Run the pose model on every Nth frame and reuse its result in between
+    # (smoothed): 2 cuts the app's CPU by about a quarter for one frame (33 ms)
+    # more lag, unnoticeable for legs in a meeting. 1 tracks fast moves best.
+    pose_every: int = 2
     # RTMPose fallback for frames where MediaPipe cannot see the hips (person
     # too close, head and chest out of frame).
     fallback: bool = True

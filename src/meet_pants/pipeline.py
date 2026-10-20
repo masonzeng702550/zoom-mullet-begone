@@ -148,6 +148,11 @@ def run(
     config: Config, max_frames: int | None = None, record: Path | None = None, settings_path: Path | None = None
 ) -> int:
     """`settings_path`: config file the settings page saves to (None: changes are not saved)."""
+    # OpenCV splits even small per-frame jobs (the preview's color conversion,
+    # resizes) across every core through GCD; the hand-off costs more than the
+    # work: ~13 ms of CPU per preview frame instead of ~4, and a third of the
+    # app's total CPU. One thread is as fast here and much cooler.
+    cv2.setNumThreads(1)
     choice = GarmentChoice(config.garment, config.garment_color, config.garment_auto)
     try:
         wardrobe = Wardrobe(Path(config.garments_dir), config.garment, effective(choice).color)
@@ -213,6 +218,7 @@ def run(
         stats = Stats()
         auto = matcher is not None
         legs_in_view = True
+        raw_pose: PoseFrame | None = None
         frames = detected = dressed = 0
         sources: dict[str, int] = {}
         total_inference_ms = total_render_ms = 0.0
@@ -238,7 +244,11 @@ def run(
                 need_top = auto and frames % TOP_SAMPLE_EVERY == TOP_SAMPLE_EVERY - 1
                 if need_legs or need_top:
                     segmenter.submit(frame.image, frame.t_ms)  # runs while the pose model works
-                pose = smoother(detector.detect(frame.image, frame.t_ms), width, height)
+                if raw_pose is None or frames % max(1, config.pose.pose_every) == 0:
+                    raw_pose = detector.detect(frame.image, frame.t_ms)
+                else:
+                    raw_pose = replace(raw_pose, t_ms=frame.t_ms, inference_ms=0.0)
+                pose = smoother(raw_pose, width, height)
                 segmentation = segmenter.latest()
                 if segmentation is not None and frame.t_ms - segmentation.t_ms > SEGMENTATION_MAX_AGE_MS:
                     segmentation = None

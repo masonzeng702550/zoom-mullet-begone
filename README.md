@@ -59,7 +59,9 @@ It cannot take over apps or sites that keep using the built-in camera: macOS giv
 - The skin/clothes segmenter runs on the GPU and only while your legs are in view (or briefly for a shirt-color sample); sitting at a desk with only your upper body in view, almost nothing but the pose model runs.
 - The RTMPose fallback is loaded the first time it is needed, and is not run while MediaPipe sees your upper body with the hips below the frame.
 - The pose model stays on the CPU: MediaPipe's macOS GPU path leaks every input frame. `pose: {segmenter_gpu: false}` moves the segmenter back to the CPU (about 400 MB less memory, more CPU).
-- To cool down further: `--fps 24` (or 20), `--no-preview`, and `--resolution 960x540`.
+- OpenCV is limited to one thread: its default spreads even the preview's per-frame color conversion over every core, and the hand-off cost a third of the app's CPU.
+- The pose model runs on every second frame (`pose: {pose_every: 1}` for every frame: sharper on fast moves, about a third more CPU).
+- To cool down further: `--fps 24` (or 20) and `--no-preview`.
 
 ## Pose fallback
 
