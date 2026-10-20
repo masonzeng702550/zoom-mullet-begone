@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import functools
+import os
 import threading
 import time
 from dataclasses import replace
@@ -12,6 +14,7 @@ import numpy as np
 from meet_pants.config import Config
 from meet_pants.pipeline import RunControl
 from meet_pants.service import BackgroundService
+from meet_pants.worker import run_in_child
 
 
 class FakeWatcher:
@@ -173,5 +176,64 @@ def test_browser_run_leaves_the_virtual_camera_alone_and_ends_with_the_tab(tmp_p
         watcher.meeting = True  # Zoom opens OBS Virtual Camera meanwhile
         assert wait_for(lambda: configs[-1] is True)  # restarted feeding it
         service.hub.feed.disconnect()
+    finally:
+        service.quit()
+
+
+PROBE_COLOR = "#000001"  # the page picks this: the child runner probes once
+
+
+def child_runner(config: Config, control: RunControl) -> int:
+    """Stands in for pipeline.run in the child process. Like shirt matching, it picks a
+    color itself when the page sets none: its pid, so the test can find it."""
+    probed = False
+    while control.keep_running():
+        choice = control.hub.choice
+        if not choice.color:
+            control.hub.set(replace(choice, color=f"#{os.getpid():06x}"), save=False)
+        if choice.color == PROBE_COLOR and not probed and control.probe is not None:
+            probed = True
+            if not control.probe():
+                return 0
+        control.on_frame(np.zeros((90, 160, 3), np.uint8))
+        time.sleep(0.01)
+    return 0
+
+
+def alive(pid: int) -> bool:
+    try:
+        os.kill(pid, 0)
+        return True
+    except ProcessLookupError:
+        return False
+
+
+def test_runs_in_a_child_process_that_exits_with_the_run(tmp_path: Path, monkeypatch) -> None:
+    """The default runner: frames, settings and probes cross the process boundary, and the
+    child (with the models' memory) is gone once the run ends."""
+    monkeypatch.setattr("meet_pants.service.POLL_S", 0.02)
+    monkeypatch.setattr("meet_pants.service.PROBE_SETTLE_S", 0.0)
+    service, watcher, _ = make_service(tmp_path)
+    service._runner = functools.partial(run_in_child, target=child_runner)
+    service.hub.set(replace(service.hub.choice, color=""), save=False)
+    watcher.meeting = True
+    service.start()
+    try:
+        assert wait_for(lambda: service.hub.preview() is not None, timeout=20)  # the live preview crossed
+        assert wait_for(lambda: service.hub.choice.color != "")  # the child's own pick reached the page
+        pid = int(service.hub.choice.color[1:], 16)
+        assert pid != os.getpid() and alive(pid)
+
+        service.hub.feed.connect()  # a browser tab: full frames cross too
+        try:
+            assert service.hub.feed.next_frame(0, timeout=3) is not None
+        finally:
+            service.hub.feed.disconnect()
+
+        watcher.meeting = False
+        service.hub.update({"color": PROBE_COLOR})  # page -> child, which probes; nobody watches
+        assert wait_for(lambda: service.state == "waiting")
+        assert wait_for(lambda: not alive(pid))
+        assert service.sessions == 1
     finally:
         service.quit()

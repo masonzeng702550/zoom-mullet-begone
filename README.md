@@ -52,7 +52,7 @@ On macOS the first run asks for camera access for your terminal app.
 .venv/bin/python -m meet_pants --background
 ```
 
-A pants icon appears in the menu bar. Join a meeting and choose **meet-pants** (browser extension) or **OBS Virtual Camera** as the camera; the pants appear about 2.5 seconds later.
+A pants icon appears in the menu bar. Join a meeting and choose **meet-pants** (browser extension) or **OBS Virtual Camera** as the camera; the pants appear about 3.5 seconds later.
 
 **Foreground mode (all systems):**
 
@@ -106,14 +106,14 @@ meet-pants cannot take over apps that keep using the built-in camera: macOS lets
 The menu bar icon is outlined while waiting and filled while in use.
 
 - **Waiting**: the camera is off and almost nothing runs (about 0% CPU). Twice a second meet-pants checks whether a browser tab picked the meet-pants camera, and on macOS whether an app opened *OBS Virtual Camera* (through CoreMediaIO).
-- **A meeting opens the camera**: meet-pants turns on your camera, and the pants appear about 2.5 seconds later.
+- **A meeting opens the camera**: meet-pants turns on your camera, and the pants appear about 3.5 seconds later.
 - **A browser tab releases the camera**: meet-pants stops about 3 seconds later. A run started by a browser tab does not touch OBS Virtual Camera.
 - **A desktop app closes OBS Virtual Camera**: meet-pants' own video keeps the virtual camera marked as "in use", so it cannot see this directly. After nobody has been in front of the camera for a minute, it stops sending for a moment and checks again. If no app is reading the camera, it turns your camera off and goes back to waiting. If you stay at your desk after the meeting, it keeps running until you leave, quit it, or turn off auto start in the menu.
 - **Menu**: the current status, 開啟設定… (open settings), 會議開鏡頭時自動套用 (auto start when a meeting opens the camera) and 結束 meet-pants (quit).
 
 On Windows and Linux, background mode cannot yet tell when a desktop app opens the virtual camera: with a virtual camera driver installed it runs all the time; without one it serves only the browser extension and starts and stops with your tabs.
 
-After a run, memory use stays at about 700 MB until meet-pants quits (Python keeps the memory it used).
+Each run happens in a separate process that exits when the run ends, so memory use goes back to about 170 MB afterwards.
 
 ## Settings page
 
@@ -181,7 +181,7 @@ Measured on an M4 Pro MacBook Pro with a 720p camera at 30 fps:
 | Situation | CPU | Memory |
 |---|---|---|
 | Background mode, waiting (before the first run) | about 0% | about 170 MB |
-| Background mode, waiting (after a run) | about 0% | about 700 MB |
+| Background mode, waiting (after a run) | about 0% | about 180 MB |
 | Running, upper body in view | about 30–40% | about 650 MB |
 
 How it stays light:
