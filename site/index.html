@@ -1,0 +1,473 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Zoom Mullet Begone · Test room</title>
+<meta name="description" content="A practice meeting room for trying the Zoom Mullet Begone browser extension camera.">
+<meta name="theme-color" content="#202124">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%238ab4f8'/%3E%3Cpath d='M9 7h14l2 18h-6l-3-11-3 11H7z' fill='%23202124'/%3E%3C/svg%3E">
+<style>
+  :root {
+    --bg: #202124;
+    --tile: #3c4043;
+    --tile-2: #2d2e31;
+    --panel: #ffffff;
+    --panel-ink: #202124;
+    --panel-muted: #5f6368;
+    --ink: #e8eaed;
+    --muted: #bdc1c6;
+    --btn: #3c4043;
+    --btn-hover: #4a4e51;
+    --off: #ea4335;
+    --accent: #8ab4f8;
+    --ok: #81c995;
+    --warn: #fdd663;
+    --radius: 12px;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body { background: var(--bg); color: var(--ink); display: flex; flex-direction: column; overflow: hidden; }
+  button, select { font: inherit; color: inherit; }
+  a { color: #1a73e8; }
+  svg { width: 24px; height: 24px; fill: currentColor; flex: none; }
+  [hidden] { display: none !important; }
+
+  /* top bar */
+  header { display: flex; align-items: center; gap: 10px; padding: 10px 16px; min-height: 56px; }
+  .brand { font-weight: 600; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .spacer { flex: 1; }
+  .chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; font-size: 13px; background: var(--tile); white-space: nowrap; }
+  .chip .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
+  .chip[data-state="found"] { background: #1e3a2a; color: #ceead6; }
+  .chip[data-state="found"] .dot { background: var(--ok); }
+  .chip[data-state="missing"] { background: #463a17; color: #feefc3; }
+  .chip[data-state="missing"] .dot { background: var(--warn); }
+  .lang { border: 1px solid #5f6368; background: transparent; border-radius: 999px; padding: 5px 12px; font-size: 13px; cursor: pointer; }
+  .lang:hover { background: var(--tile); }
+
+  /* stage */
+  main { flex: 1; display: flex; min-height: 0; padding: 0 16px; gap: 16px; }
+  .grid { flex: 1; min-width: 0; display: grid; gap: 10px; grid-template-columns: 2fr 1fr; grid-template-rows: repeat(3, minmax(0, 1fr)); }
+  .tile { position: relative; background: var(--tile); border-radius: var(--radius); overflow: hidden; display: flex; align-items: center; justify-content: center; min-height: 0; }
+  .tile.self { grid-row: 1 / span 3; background: var(--tile-2); }
+  .avatar { width: clamp(48px, 9vw, 96px); aspect-ratio: 1; border-radius: 50%; display: grid; place-items: center; font-size: clamp(20px, 3.4vw, 40px); font-weight: 500; color: #fff; user-select: none; }
+  .self .avatar { width: clamp(72px, 14vw, 160px); font-size: clamp(30px, 5.5vw, 64px); background: #5f6368; }
+  .name { position: absolute; left: 12px; bottom: 10px; font-size: 13px; text-shadow: 0 1px 2px rgba(0,0,0,.6); display: flex; align-items: center; gap: 4px; }
+  .name svg { width: 16px; height: 16px; }
+  .muted-badge { position: absolute; right: 10px; top: 10px; width: 28px; height: 28px; border-radius: 50%; background: rgba(32,33,36,.7); display: grid; place-items: center; }
+  .muted-badge svg { width: 16px; height: 16px; }
+  video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; background: #000; }
+  video.mirror { transform: scaleX(-1); }
+  .self[data-video="on"] .avatar, .self[data-video="on"] .prompt { display: none; }
+  .self[data-video="off"] video { display: none; }
+  .prompt { position: absolute; left: 50%; bottom: 16%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 10px; width: min(90%, 420px); text-align: center; }
+  .prompt p { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.45; }
+  .prompt p.error { color: #f6aea9; }
+  .primary { border: 0; border-radius: 999px; padding: 10px 22px; background: var(--accent); color: #202124; font-weight: 600; cursor: pointer; }
+  .primary:hover { background: #aecbfa; }
+  .primary:disabled { opacity: .6; cursor: default; }
+
+  /* side panel */
+  aside { width: 340px; flex: none; background: var(--panel); color: var(--panel-ink); border-radius: var(--radius); padding: 20px; overflow-y: auto; }
+  aside[hidden] { display: none; }
+  aside h2 { margin: 0 0 4px; font-size: 18px; font-weight: 500; display: flex; align-items: center; }
+  aside h2 .close { margin-left: auto; }
+  aside .sub { margin: 0 0 16px; color: var(--panel-muted); font-size: 14px; line-height: 1.45; }
+  aside ol { list-style: none; counter-reset: step; padding: 0; margin: 0; display: grid; gap: 16px; }
+  aside li { counter-increment: step; display: grid; grid-template-columns: 28px 1fr; gap: 10px; font-size: 14px; line-height: 1.5; }
+  aside li::before { content: counter(step); width: 28px; height: 28px; border-radius: 50%; background: #e8f0fe; color: #1967d2; display: grid; place-items: center; font-weight: 600; }
+  aside li b { display: block; font-weight: 600; }
+  aside code { background: #f1f3f4; padding: 2px 5px; border-radius: 4px; font-size: 12.5px; word-break: break-all; }
+  aside .note { margin-top: 18px; padding: 12px; background: #f1f3f4; border-radius: 8px; color: var(--panel-muted); font-size: 13px; line-height: 1.5; }
+  .icon-btn { width: 40px; height: 40px; border: 0; border-radius: 50%; background: transparent; display: grid; place-items: center; cursor: pointer; }
+  aside .icon-btn:hover { background: #f1f3f4; }
+
+  /* control bar */
+  footer { display: flex; align-items: center; gap: 12px; padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); }
+  .meta { flex: 1; min-width: 0; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .meta span + span::before { content: "|"; margin: 0 10px; color: #5f6368; }
+  .controls { display: flex; align-items: center; gap: 10px; }
+  .round { width: 48px; height: 48px; border: 0; border-radius: 50%; background: var(--btn); display: grid; place-items: center; cursor: pointer; }
+  .round:hover { background: var(--btn-hover); }
+  .round[aria-pressed="false"] { background: var(--off); }
+  .round[aria-pressed="false"]:hover { background: #ee675c; }
+  .round:focus-visible, .primary:focus-visible, .lang:focus-visible, select:focus-visible, .icon-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .leave { width: 64px; border-radius: 999px; background: var(--off); }
+  .leave:hover { background: #ee675c; }
+  .picker { position: relative; display: flex; align-items: center; height: 48px; border-radius: 999px; background: var(--btn); padding: 0 8px 0 14px; max-width: 240px; }
+  .picker svg { width: 20px; height: 20px; color: var(--muted); }
+  .picker select { appearance: none; background: transparent; border: 0; height: 100%; padding: 0 22px 0 8px; min-width: 0; max-width: 190px; text-overflow: ellipsis; cursor: pointer; }
+  .picker select option { background: #fff; color: #202124; }
+  .picker::after { content: ""; position: absolute; right: 14px; top: 21px; border: 5px solid transparent; border-top-color: var(--muted); pointer-events: none; }
+  .end { flex: 1; display: flex; justify-content: flex-end; }
+  .end .round { background: transparent; }
+  .end .round:hover, .end .round[aria-expanded="true"] { background: var(--btn); }
+  .end .round[aria-expanded="true"] { color: var(--accent); }
+
+  /* left screen */
+  .left-screen { position: fixed; inset: 0; background: var(--bg); display: grid; place-items: center; text-align: center; padding: 16px; z-index: 5; }
+  .left-screen[hidden] { display: none; }
+  .left-screen h1 { font-size: 28px; font-weight: 400; margin: 0 0 20px; }
+
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+
+  @media (max-width: 900px) {
+    aside { position: fixed; left: 0; right: 0; bottom: 0; width: auto; max-height: 78vh; border-radius: 16px 16px 0 0; z-index: 4; box-shadow: 0 -8px 24px rgba(0,0,0,.4); padding-bottom: calc(20px + env(safe-area-inset-bottom)); }
+    .meta { display: none; }
+    .end { flex: 0; }
+    footer { justify-content: center; }
+  }
+  @media (max-width: 640px) {
+    header { padding: 8px 16px; }
+    .brand { display: none; }
+    .grid { grid-template-columns: 1fr 1fr 1fr; grid-template-rows: 3fr 1fr; gap: 8px; }
+    .tile.self { grid-row: auto; grid-column: 1 / -1; }
+    .tile:not(.self) .name { font-size: 11px; left: 8px; bottom: 6px; }
+    .controls { gap: 8px; }
+    .round { width: 44px; height: 44px; }
+    .leave { width: 56px; }
+    .picker { height: 44px; max-width: 120px; padding-left: 12px; }
+    .picker svg { display: none; }
+    .picker select { max-width: 100px; padding-left: 0; }
+    .picker::after { top: 19px; right: 12px; }
+    footer { gap: 8px; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand" data-i18n="brand">Zoom Mullet Begone · Test room</div>
+  <div class="spacer"></div>
+  <div class="chip" id="chip" data-state="checking" role="status" aria-live="polite"><span class="dot"></span><span id="chipText" data-i18n="chipChecking">Checking for extension…</span></div>
+  <button class="lang" id="lang" type="button" aria-label="Switch language">中文</button>
+</header>
+
+<main>
+  <section class="grid" aria-label="Participants">
+    <div class="tile self" id="selfTile" data-video="off">
+      <video id="video" class="mirror" autoplay playsinline muted></video>
+      <div class="avatar" aria-hidden="true">Y</div>
+      <div class="prompt">
+        <p id="promptText" data-i18n="promptIdle">Your camera is off. Nothing is shared: the video stays in this tab.</p>
+        <button class="primary" id="join" type="button" data-i18n="join">Turn on camera</button>
+      </div>
+      <div class="muted-badge" id="selfMuted" title="Microphone off"><svg viewBox="0 0 24 24"><path d="M19 11h-1.7c0 .74-.16 1.43-.43 2.05l1.23 1.23c.56-.98.9-2.09.9-3.28zm-4.02.17c0-.06.02-.11.02-.17V5c0-1.66-1.34-3-3-3S9 3.34 9 5v.18l5.98 5.99zM4.27 3 3 4.27l6.01 6.01V11c0 1.66 1.33 3 2.99 3 .22 0 .44-.03.65-.08l1.66 1.66c-.71.33-1.5.52-2.31.52-2.76 0-5.3-2.1-5.3-5.1H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c.91-.13 1.77-.45 2.54-.9L19.73 21 21 19.73 4.27 3z"/></svg></div>
+      <div class="name"><span data-i18n="you">You</span></div>
+    </div>
+    <div class="tile"><div class="avatar" style="background:#1e8e3e" aria-hidden="true">AL</div><div class="muted-badge"><svg viewBox="0 0 24 24"><path d="M19 11h-1.7c0 .74-.16 1.43-.43 2.05l1.23 1.23c.56-.98.9-2.09.9-3.28zm-4.02.17c0-.06.02-.11.02-.17V5c0-1.66-1.34-3-3-3S9 3.34 9 5v.18l5.98 5.99zM4.27 3 3 4.27l6.01 6.01V11c0 1.66 1.33 3 2.99 3 .22 0 .44-.03.65-.08l1.66 1.66c-.71.33-1.5.52-2.31.52-2.76 0-5.3-2.1-5.3-5.1H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c.91-.13 1.77-.45 2.54-.9L19.73 21 21 19.73 4.27 3z"/></svg></div><div class="name">Alex Lin</div></div>
+    <div class="tile"><div class="avatar" style="background:#a142f4" aria-hidden="true">MC</div><div class="name">Mei Chen</div></div>
+    <div class="tile"><div class="avatar" style="background:#e37400" aria-hidden="true">JP</div><div class="muted-badge"><svg viewBox="0 0 24 24"><path d="M19 11h-1.7c0 .74-.16 1.43-.43 2.05l1.23 1.23c.56-.98.9-2.09.9-3.28zm-4.02.17c0-.06.02-.11.02-.17V5c0-1.66-1.34-3-3-3S9 3.34 9 5v.18l5.98 5.99zM4.27 3 3 4.27l6.01 6.01V11c0 1.66 1.33 3 2.99 3 .22 0 .44-.03.65-.08l1.66 1.66c-.71.33-1.5.52-2.31.52-2.76 0-5.3-2.1-5.3-5.1H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c.91-.13 1.77-.45 2.54-.9L19.73 21 21 19.73 4.27 3z"/></svg></div><div class="name">Jordan Park</div></div>
+  </section>
+
+  <aside id="panel" aria-labelledby="panelTitle">
+    <h2><span id="panelTitle" data-i18n="howTitle">How to test</span>
+      <button class="icon-btn close" id="closePanel" type="button" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>
+    </h2>
+    <p class="sub" data-i18n="howSub">This room is a stand-in for a real video call. It only shows your own camera; nothing is sent anywhere.</p>
+    <ol>
+      <li><div><b data-i18n="s1t">Install the extension</b><span data-i18n-html="s1d">Download the repository, open <code>chrome://extensions</code>, turn on Developer mode, click <b style="display:inline">Load unpacked</b> and choose the <a href="https://github.com/masonzeng702550/zoom-mullet-begone/tree/main/browser-extension" target="_blank" rel="noopener">browser-extension</a> folder. Details: <a data-readme href="https://github.com/masonzeng702550/zoom-mullet-begone#browser-extension-no-obs" target="_blank" rel="noopener">README</a>. Then reload this page.</span></div></li>
+      <li><div><b data-i18n="s2t">Start the app</b><span data-i18n-html="s2d">In the project folder run <code>python -m zoom_mullet_begone --background</code>. Its settings page is at <a href="http://127.0.0.1:8765/" target="_blank" rel="noopener">127.0.0.1:8765</a>.</span></div></li>
+      <li><div><b data-i18n="s3t">Pick “Zoom Mullet Begone”</b><span data-i18n-html="s3d">Click <b style="display:inline">Turn on camera</b>, then choose <b style="display:inline">Zoom Mullet Begone</b> in the camera menu at the bottom. The pants appear a few seconds later.</span></div></li>
+    </ol>
+    <p class="note" data-i18n="note">The status chip at the top shows whether this browser has the extension. Without it, this page just shows your normal camera.</p>
+  </aside>
+</main>
+
+<footer>
+  <div class="meta"><span id="clock"></span><span data-i18n="room">Test room</span></div>
+  <div class="controls">
+    <button class="round" id="mic" type="button" aria-pressed="false" aria-label="Turn on microphone" title="Microphone">
+      <svg class="on" viewBox="0 0 24 24" hidden><path d="M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"/></svg>
+      <svg class="off" viewBox="0 0 24 24"><path d="M19 11h-1.7c0 .74-.16 1.43-.43 2.05l1.23 1.23c.56-.98.9-2.09.9-3.28zm-4.02.17c0-.06.02-.11.02-.17V5c0-1.66-1.34-3-3-3S9 3.34 9 5v.18l5.98 5.99zM4.27 3 3 4.27l6.01 6.01V11c0 1.66 1.33 3 2.99 3 .22 0 .44-.03.65-.08l1.66 1.66c-.71.33-1.5.52-2.31.52-2.76 0-5.3-2.1-5.3-5.1H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c.91-.13 1.77-.45 2.54-.9L19.73 21 21 19.73 4.27 3z"/></svg>
+    </button>
+    <button class="round" id="cam" type="button" aria-pressed="false" aria-label="Turn on camera" title="Camera">
+      <svg class="on" viewBox="0 0 24 24" hidden><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>
+      <svg class="off" viewBox="0 0 24 24"><path d="M21 6.5l-4 4V7c0-.55-.45-1-1-1H9.82L21 17.18V6.5zM3.27 2 2 3.27 4.73 6H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.21 0 .39-.08.54-.18L19.73 21 21 19.73 3.27 2z"/></svg>
+    </button>
+    <label class="picker" title="Camera">
+      <svg viewBox="0 0 24 24"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>
+      <span class="sr" data-i18n="pickerLabel">Camera</span>
+      <select id="picker"></select>
+    </label>
+    <button class="round leave" id="leave" type="button" aria-label="Leave call" title="Leave call">
+      <svg viewBox="0 0 24 24"><path d="M12 9c-1.6 0-3.15.25-4.6.72v3.1c0 .39-.23.74-.56.9-.98.49-1.87 1.12-2.66 1.85-.18.18-.43.28-.7.28-.28 0-.53-.11-.71-.29L.29 13.08c-.18-.17-.29-.42-.29-.7 0-.28.11-.53.29-.71C3.34 8.78 7.46 7 12 7s8.66 1.78 11.71 4.67c.18.18.29.43.29.71 0 .28-.11.53-.29.71l-2.48 2.48c-.18.18-.43.29-.71.29-.27 0-.52-.11-.7-.28-.79-.74-1.69-1.36-2.67-1.85-.33-.16-.56-.5-.56-.9v-3.1C15.15 9.25 13.6 9 12 9z"/></svg>
+    </button>
+  </div>
+  <div class="end">
+    <button class="round" id="info" type="button" aria-expanded="true" aria-controls="panel" aria-label="How to test" title="How to test">
+      <svg viewBox="0 0 24 24"><path d="M11 7h2v2h-2zm0 4h2v6h-2zm1-9C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/></svg>
+    </button>
+  </div>
+</footer>
+
+<div class="left-screen" id="leftScreen" hidden>
+  <div>
+    <h1 data-i18n="leftTitle">You left the test room</h1>
+    <button class="primary" id="rejoin" type="button" data-i18n="rejoin">Rejoin</button>
+  </div>
+</div>
+
+<script>
+(() => {
+  "use strict";
+  const EXT_ID = "zoom-mullet-begone-camera";
+  const EXT_LABEL = "Zoom Mullet Begone";
+  const REPO = "https://github.com/masonzeng702550/zoom-mullet-begone";
+
+  const T = {
+    en: {
+      brand: "Zoom Mullet Begone · Test room",
+      chipChecking: "Checking for extension…",
+      chipFound: "Extension found",
+      chipMissing: "Extension not found",
+      promptIdle: "Your camera is off. Nothing is shared: the video stays in this tab.",
+      promptAsking: "Waiting for camera permission…",
+      join: "Turn on camera",
+      retry: "Try again",
+      you: "You",
+      room: "Test room",
+      pickerLabel: "Camera",
+      pickerNone: "No cameras yet",
+      pickerDefault: "Default camera",
+      pickerCamera: "Camera",
+      pickerMissing: "Zoom Mullet Begone (extension not installed)",
+      howTitle: "How to test",
+      howSub: "This room is a stand-in for a real video call. It only shows your own camera; nothing is sent anywhere.",
+      s1t: "Install the extension",
+      s1d: 'Download the repository, open <code>chrome://extensions</code>, turn on Developer mode, click <b style="display:inline">Load unpacked</b> and choose the <a href="' + REPO + '/tree/main/browser-extension" target="_blank" rel="noopener">browser-extension</a> folder. Details: <a href="' + REPO + '#browser-extension-no-obs" target="_blank" rel="noopener">README</a>. Then reload this page.',
+      s2t: "Start the app",
+      s2d: 'In the project folder run <code>python -m zoom_mullet_begone --background</code>. Its settings page is at <a href="http://127.0.0.1:8765/" target="_blank" rel="noopener">127.0.0.1:8765</a>.',
+      s3t: "Pick “Zoom Mullet Begone”",
+      s3d: 'Click <b style="display:inline">Turn on camera</b>, then choose <b style="display:inline">Zoom Mullet Begone</b> in the camera menu at the bottom. The pants appear a few seconds later.',
+      note: "The status chip at the top shows whether this browser has the extension. Without it, this page just shows your normal camera.",
+      leftTitle: "You left the test room",
+      rejoin: "Rejoin",
+      micOn: "Turn off microphone", micOff: "Turn on microphone",
+      camOn: "Turn off camera", camOff: "Turn on camera",
+      leave: "Leave call", info: "How to test", close: "Close", lang: "Switch language",
+      errDenied: "Camera access is blocked. Allow the camera with the icon in the address bar, then try again.",
+      errNotFound: "No camera was found. Connect a camera, or install the extension and start the app to use the Zoom Mullet Begone camera.",
+      errBusy: "The camera is in use by another app or could not start. Close the other app and try again.",
+      errInsecure: "This browser does not allow camera access here. Open the page over https (or localhost).",
+      errOther: "The camera could not start: ",
+      errMicDenied: "Microphone access is blocked.",
+      errMicNone: "No microphone was found."
+    },
+    zh: {
+      brand: "Zoom Mullet Begone · 測試會議室",
+      chipChecking: "正在檢查擴充功能…",
+      chipFound: "已偵測到擴充功能",
+      chipMissing: "找不到擴充功能",
+      promptIdle: "鏡頭目前關閉。畫面只留在這個分頁，不會傳到任何地方。",
+      promptAsking: "等待鏡頭權限…",
+      join: "開啟鏡頭",
+      retry: "再試一次",
+      you: "你",
+      room: "測試會議室",
+      pickerLabel: "鏡頭",
+      pickerNone: "尚無鏡頭",
+      pickerDefault: "預設鏡頭",
+      pickerCamera: "鏡頭",
+      pickerMissing: "Zoom Mullet Begone（尚未安裝擴充功能）",
+      howTitle: "測試方式",
+      howSub: "這個會議室用來模擬視訊通話，只會顯示你自己的鏡頭，不會傳送任何畫面。",
+      s1t: "安裝擴充功能",
+      s1d: '下載這個儲存庫，打開 <code>chrome://extensions</code>，開啟「開發人員模式」，按「<b style="display:inline">載入未封裝項目</b>」，選擇 <a href="' + REPO + '/tree/main/browser-extension" target="_blank" rel="noopener">browser-extension</a> 資料夾。詳細說明見 <a href="' + REPO + '/blob/main/README.zh-TW.md#瀏覽器擴充功能不需要-obs" target="_blank" rel="noopener">README</a>。裝好後重新整理這個頁面。',
+      s2t: "啟動程式",
+      s2d: '在專案資料夾執行 <code>python -m zoom_mullet_begone --background</code>。設定頁在 <a href="http://127.0.0.1:8765/" target="_blank" rel="noopener">127.0.0.1:8765</a>。',
+      s3t: "選擇「Zoom Mullet Begone」",
+      s3d: '按「<b style="display:inline">開啟鏡頭</b>」，再從下方的鏡頭選單選 <b style="display:inline">Zoom Mullet Begone</b>，幾秒後就會出現褲子。',
+      note: "上方的狀態標籤會顯示這個瀏覽器是否裝了擴充功能。沒裝的話，這個頁面只會顯示一般鏡頭。",
+      leftTitle: "你已離開測試會議室",
+      rejoin: "重新加入",
+      micOn: "關閉麥克風", micOff: "開啟麥克風",
+      camOn: "關閉鏡頭", camOff: "開啟鏡頭",
+      leave: "離開通話", info: "測試方式", close: "關閉", lang: "切換語言",
+      errDenied: "鏡頭權限被封鎖。請用網址列上的圖示允許使用鏡頭，再試一次。",
+      errNotFound: "找不到鏡頭。請接上鏡頭，或安裝擴充功能並啟動程式，改用 Zoom Mullet Begone 鏡頭。",
+      errBusy: "鏡頭被其他程式占用或無法啟動。請關閉其他程式後再試一次。",
+      errInsecure: "這個瀏覽器不允許在這裡使用鏡頭。請用 https（或 localhost）開啟這個頁面。",
+      errOther: "鏡頭無法啟動：",
+      errMicDenied: "麥克風權限被封鎖。",
+      errMicNone: "找不到麥克風。"
+    }
+  };
+
+  const $ = (id) => document.getElementById(id);
+  const md = navigator.mediaDevices;
+  const video = $("video"), selfTile = $("selfTile"), picker = $("picker");
+  const camBtn = $("cam"), micBtn = $("mic"), joinBtn = $("join"), promptText = $("promptText");
+
+  let lang = "en";
+  try { lang = localStorage.getItem("zmb-lang") || ""; } catch (e) { /* storage blocked */ }
+  if (lang !== "en" && lang !== "zh") lang = (navigator.language || "").toLowerCase().startsWith("zh") ? "zh" : "en";
+  let videoStream = null, audioStream = null;
+  let extFound = null, chosen = "", promptKey = "promptIdle", promptExtra = "", busy = false;
+  const t = (key) => T[lang][key] ?? T.en[key] ?? key;
+
+  // --- language ---------------------------------------------------------
+  function applyLang() {
+    document.documentElement.lang = lang === "zh" ? "zh-Hant" : "en";
+    document.title = t("brand");
+    document.querySelectorAll("[data-i18n]").forEach((el) => { el.textContent = t(el.dataset.i18n); });
+    document.querySelectorAll("[data-i18n-html]").forEach((el) => { el.innerHTML = t(el.dataset.i18nHtml); });
+    $("lang").textContent = lang === "zh" ? "English" : "中文";
+    $("lang").setAttribute("aria-label", t("lang"));
+    $("leave").setAttribute("aria-label", t("leave")); $("leave").title = t("leave");
+    $("info").setAttribute("aria-label", t("info")); $("info").title = t("info");
+    $("closePanel").setAttribute("aria-label", t("close"));
+    renderChip(); renderPrompt(); renderButtons(); refreshDevices(); clock();
+  }
+  $("lang").addEventListener("click", () => {
+    lang = lang === "zh" ? "en" : "zh";
+    try { localStorage.setItem("zmb-lang", lang); } catch (e) { /* storage blocked */ }
+    applyLang();
+  });
+
+  // --- status chip & prompt ----------------------------------------------
+  function renderChip() {
+    const chip = $("chip");
+    chip.dataset.state = extFound === null ? "checking" : extFound ? "found" : "missing";
+    $("chipText").textContent = t(extFound === null ? "chipChecking" : extFound ? "chipFound" : "chipMissing");
+  }
+  function renderPrompt() {
+    promptText.textContent = t(promptKey) + promptExtra;
+    promptText.classList.toggle("error", promptKey.startsWith("err"));
+    joinBtn.textContent = t(promptKey.startsWith("err") ? "retry" : "join");
+    joinBtn.disabled = busy;
+  }
+  function setPrompt(key, extra = "") { promptKey = key; promptExtra = extra; renderPrompt(); }
+
+  function renderButtons() {
+    const camOn = !!videoStream, micOn = !!(audioStream && audioStream.getAudioTracks().some((tr) => tr.enabled));
+    camBtn.setAttribute("aria-pressed", String(camOn));
+    camBtn.querySelector(".on").toggleAttribute("hidden", !camOn); camBtn.querySelector(".off").toggleAttribute("hidden", camOn);
+    camBtn.setAttribute("aria-label", t(camOn ? "camOn" : "camOff")); camBtn.title = t(camOn ? "camOn" : "camOff");
+    micBtn.setAttribute("aria-pressed", String(micOn));
+    micBtn.querySelector(".on").toggleAttribute("hidden", !micOn); micBtn.querySelector(".off").toggleAttribute("hidden", micOn);
+    micBtn.setAttribute("aria-label", t(micOn ? "micOn" : "micOff")); micBtn.title = t(micOn ? "micOn" : "micOff");
+    $("selfMuted").hidden = micOn;
+    selfTile.dataset.video = camOn ? "on" : "off";
+  }
+
+  // --- devices ------------------------------------------------------------
+  async function refreshDevices() {
+    if (!md || !md.enumerateDevices) { extFound = false; renderChip(); fillPicker([]); return; }
+    let devices = [];
+    try { devices = await md.enumerateDevices(); } catch (e) { /* treat as none */ }
+    const cams = devices.filter((d) => d.kind === "videoinput");
+    extFound = cams.some((d) => d.deviceId === EXT_ID);
+    renderChip();
+    fillPicker(cams);
+  }
+  function fillPicker(cams) {
+    picker.textContent = "";
+    // Before permission, real cameras are listed with empty ids and labels.
+    const real = cams.filter((d) => d.deviceId !== EXT_ID && d.deviceId);
+    const add = (value, label, disabled = false) => {
+      const o = document.createElement("option");
+      o.value = value; o.textContent = label; o.disabled = disabled;
+      picker.appendChild(o);
+    };
+    if (!real.length) add("", t("pickerDefault"));
+    real.forEach((d, i) => add(d.deviceId, d.label || `${t("pickerCamera")} ${i + 1}`));
+    const ext = cams.find((d) => d.deviceId === EXT_ID);
+    if (ext) add(EXT_ID, ext.label || EXT_LABEL);
+    else add("__missing", t("pickerMissing"), true);
+    const current = videoStream && videoStream.getVideoTracks()[0];
+    const activeId = chosen || (current && current.getSettings().deviceId) || "";
+    if ([...picker.options].some((o) => o.value === activeId && !o.disabled)) picker.value = activeId;
+  }
+  if (md && md.addEventListener) md.addEventListener("devicechange", refreshDevices);
+
+  // --- camera -------------------------------------------------------------
+  function stopStream(s) { if (s) s.getTracks().forEach((tr) => tr.stop()); }
+
+  function errorKey(err, mic) {
+    const name = err && err.name;
+    if (name === "NotAllowedError" || name === "SecurityError" || name === "PermissionDeniedError") return mic ? "errMicDenied" : "errDenied";
+    if (name === "NotFoundError" || name === "DevicesNotFoundError" || name === "OverconstrainedError") return mic ? "errMicNone" : "errNotFound";
+    if (name === "NotReadableError" || name === "TrackStartError" || name === "AbortError") return "errBusy";
+    return "errOther";
+  }
+
+  async function startCamera(deviceId = chosen) {
+    if (busy) return;
+    if (!md || !md.getUserMedia) { setPrompt("errInsecure"); return; }
+    busy = true; setPrompt("promptAsking");
+    try {
+      const constraints = { video: deviceId ? { deviceId: { exact: deviceId } } : { width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false };
+      const stream = await md.getUserMedia(constraints);
+      stopStream(videoStream);
+      videoStream = stream;
+      chosen = deviceId;
+      video.srcObject = stream;
+      stream.getVideoTracks().forEach((tr) => tr.addEventListener("ended", () => { if (videoStream === stream) stopCamera(); }));
+      busy = false; setPrompt("promptIdle");
+    } catch (err) {
+      busy = false;
+      const key = errorKey(err, false);
+      setPrompt(key, key === "errOther" ? (err && (err.message || err.name)) || "" : "");
+    }
+    renderButtons();
+    refreshDevices();
+  }
+  function stopCamera() {
+    stopStream(videoStream); videoStream = null; video.srcObject = null;
+    renderButtons();
+  }
+
+  joinBtn.addEventListener("click", () => startCamera());
+  camBtn.addEventListener("click", () => (videoStream ? stopCamera() : startCamera()));
+  picker.addEventListener("change", () => {
+    chosen = picker.value;
+    if (videoStream || chosen) startCamera(chosen);
+  });
+
+  // --- microphone -----------------------------------------------------------
+  micBtn.addEventListener("click", async () => {
+    if (audioStream) {
+      const tracks = audioStream.getAudioTracks();
+      const on = !tracks.some((tr) => tr.enabled);
+      tracks.forEach((tr) => { tr.enabled = on; });
+      renderButtons();
+      return;
+    }
+    if (!md || !md.getUserMedia) { setPrompt("errInsecure"); return; }
+    try {
+      audioStream = await md.getUserMedia({ audio: true, video: false });
+    } catch (err) {
+      setPrompt(errorKey(err, true));
+    }
+    renderButtons();
+  });
+
+  // --- leave --------------------------------------------------------------
+  $("leave").addEventListener("click", () => {
+    stopCamera();
+    stopStream(audioStream); audioStream = null;
+    renderButtons();
+    $("leftScreen").hidden = false;
+    $("rejoin").focus();
+  });
+  $("rejoin").addEventListener("click", () => { $("leftScreen").hidden = true; setPrompt("promptIdle"); });
+
+  // --- panel --------------------------------------------------------------
+  const panel = $("panel"), info = $("info");
+  const setPanel = (open) => { panel.hidden = !open; info.setAttribute("aria-expanded", String(open)); };
+  info.addEventListener("click", () => setPanel(panel.hidden));
+  $("closePanel").addEventListener("click", () => setPanel(false));
+  if (matchMedia("(max-width: 900px)").matches) setPanel(false);
+
+  // --- clock --------------------------------------------------------------
+  function clock() { $("clock").textContent = new Date().toLocaleTimeString(lang === "zh" ? "zh-TW" : "en-US", { hour: "numeric", minute: "2-digit" }); }
+  setInterval(clock, 15000);
+
+  applyLang();
+})();
+</script>
+</body>
+</html>
