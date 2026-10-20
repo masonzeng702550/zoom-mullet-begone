@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Zoom Mullet Begone · Test room</title>
-<meta name="description" content="A practice meeting room for trying the Zoom Mullet Begone browser extension camera.">
+<meta name="description" content="Try Zoom Mullet Begone in your browser: virtual pants that follow your legs on camera. Everything runs in this tab.">
 <meta name="theme-color" content="#202124">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%238ab4f8'/%3E%3Cpath d='M9 7h14l2 18h-6l-3-11-3 11H7z' fill='%23202124'/%3E%3C/svg%3E">
 <style>
@@ -43,8 +43,10 @@
   .chip .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
   .chip[data-state="found"] { background: #1e3a2a; color: #ceead6; }
   .chip[data-state="found"] .dot { background: var(--ok); }
-  .chip[data-state="missing"] { background: #463a17; color: #feefc3; }
-  .chip[data-state="missing"] .dot { background: var(--warn); }
+  .chip[data-state="missing"], .chip[data-state="hint"] { background: #463a17; color: #feefc3; }
+  .chip[data-state="missing"] .dot, .chip[data-state="hint"] .dot { background: var(--warn); }
+  .chip[data-state="error"] { background: #5c2b29; color: #f6aea9; }
+  .chip[data-state="error"] .dot { background: var(--off); }
   .lang { border: 1px solid #5f6368; background: transparent; border-radius: 999px; padding: 5px 12px; font-size: 13px; cursor: pointer; }
   .lang:hover { background: var(--tile); }
 
@@ -59,10 +61,24 @@
   .name svg { width: 16px; height: 16px; }
   .muted-badge { position: absolute; right: 10px; top: 10px; width: 28px; height: 28px; border-radius: 50%; background: rgba(32,33,36,.7); display: grid; place-items: center; }
   .muted-badge svg { width: 16px; height: 16px; }
-  video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; background: #000; }
-  video.mirror { transform: scaleX(-1); }
+  /* the video element is only the engine's input; the canvas shows the result */
+  #video { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+  #stage { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: #000; }
+  #stage.mirror { transform: scaleX(-1); }
   .self[data-video="on"] .avatar, .self[data-video="on"] .prompt { display: none; }
-  .self[data-video="off"] video { display: none; }
+  .self[data-video="off"] #stage, .self[data-video="off"] .wardrobe, .self[data-video="off"] .compare { display: none; }
+  .wardrobe { position: absolute; top: 10px; left: 10px; right: 52px; display: flex; flex-wrap: wrap; gap: 6px; z-index: 1; }
+  .pill { border: 0; border-radius: 999px; padding: 6px 12px; font-size: 13px; background: rgba(32,33,36,.78); color: var(--ink); cursor: pointer; backdrop-filter: blur(4px); }
+  .pill:hover { background: rgba(60,64,67,.92); }
+  .pill[aria-pressed="true"] { background: var(--accent); color: #202124; font-weight: 600; }
+  .swatch { width: 28px; height: 28px; padding: 0; border-radius: 50%; border: 2px solid rgba(255,255,255,.7); cursor: pointer; }
+  .swatch[aria-pressed="true"] { outline: 3px solid var(--accent); outline-offset: 1px; }
+  .swatch.own { background: conic-gradient(#1f2a44 0 33%, #c8b48c 0 66%, #2f4f8a 0); }
+  .compare { position: absolute; right: 12px; bottom: 10px; z-index: 1; }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+  .secondary { border: 1px solid #5f6368; border-radius: 999px; padding: 9px 20px; background: transparent; color: var(--accent); font-weight: 600; cursor: pointer; }
+  .secondary:hover { background: rgba(138,180,248,.08); }
+  .secondary:disabled { opacity: .6; cursor: default; }
   .prompt { position: absolute; left: 50%; bottom: 16%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 10px; width: min(90%, 420px); text-align: center; }
   .prompt p { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.45; }
   .prompt p.error { color: #f6aea9; }
@@ -94,7 +110,7 @@
   .round:hover { background: var(--btn-hover); }
   .round[aria-pressed="false"] { background: var(--off); }
   .round[aria-pressed="false"]:hover { background: #ee675c; }
-  .round:focus-visible, .primary:focus-visible, .lang:focus-visible, select:focus-visible, .icon-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .round:focus-visible, .primary:focus-visible, .secondary:focus-visible, .pill:focus-visible, .lang:focus-visible, select:focus-visible, .icon-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   .leave { width: 64px; border-radius: 999px; background: var(--off); }
   .leave:hover { background: #ee675c; }
   .picker { position: relative; display: flex; align-items: center; height: 48px; border-radius: 999px; background: var(--btn); padding: 0 8px 0 14px; max-width: 240px; }
@@ -126,6 +142,8 @@
     .grid { grid-template-columns: 1fr 1fr 1fr; grid-template-rows: 3fr 1fr; gap: 8px; }
     .tile.self { grid-row: auto; grid-column: 1 / -1; }
     .tile:not(.self) .name { font-size: 11px; left: 8px; bottom: 6px; }
+    .pill { padding: 5px 10px; font-size: 12px; }
+    .swatch { width: 24px; height: 24px; }
     .controls { gap: 8px; }
     .round { width: 44px; height: 44px; }
     .leave { width: 56px; }
@@ -141,18 +159,25 @@
 <header>
   <div class="brand" data-i18n="brand">Zoom Mullet Begone · Test room</div>
   <div class="spacer"></div>
-  <div class="chip" id="chip" data-state="checking" role="status" aria-live="polite"><span class="dot"></span><span id="chipText" data-i18n="chipChecking">Checking for extension…</span></div>
+  <div class="chip" id="chip" data-state="checking" role="status" aria-live="polite"><span class="dot"></span><span id="chipText">…</span></div>
   <button class="lang" id="lang" type="button" aria-label="Switch language">中文</button>
 </header>
 
 <main>
   <section class="grid" aria-label="Participants">
     <div class="tile self" id="selfTile" data-video="off">
-      <video id="video" class="mirror" autoplay playsinline muted></video>
+      <video id="video" autoplay playsinline muted></video>
+      <canvas id="stage" class="mirror"></canvas>
+      <div class="wardrobe" id="wardrobe" role="toolbar"></div>
+      <button class="pill compare" id="compare" type="button" data-i18n="compare">Hold to compare</button>
       <div class="avatar" aria-hidden="true">Y</div>
       <div class="prompt">
         <p id="promptText" data-i18n="promptIdle">Your camera is off. Nothing is shared: the video stays in this tab.</p>
-        <button class="primary" id="join" type="button" data-i18n="join">Turn on camera</button>
+        <div class="row">
+          <button class="primary" id="join" type="button" data-i18n="join">Turn on camera</button>
+          <button class="secondary" id="upload" type="button" data-i18n="upload">Upload a photo or video</button>
+        </div>
+        <input id="file" type="file" accept="image/*,video/*" hidden>
       </div>
       <div class="muted-badge" id="selfMuted" title="Microphone off"><svg viewBox="0 0 24 24"><path d="M19 11h-1.7c0 .74-.16 1.43-.43 2.05l1.23 1.23c.56-.98.9-2.09.9-3.28zm-4.02.17c0-.06.02-.11.02-.17V5c0-1.66-1.34-3-3-3S9 3.34 9 5v.18l5.98 5.99zM4.27 3 3 4.27l6.01 6.01V11c0 1.66 1.33 3 2.99 3 .22 0 .44-.03.65-.08l1.66 1.66c-.71.33-1.5.52-2.31.52-2.76 0-5.3-2.1-5.3-5.1H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c.91-.13 1.77-.45 2.54-.9L19.73 21 21 19.73 4.27 3z"/></svg></div>
       <div class="name"><span data-i18n="you">You</span></div>
@@ -168,11 +193,11 @@
     </h2>
     <p class="sub" data-i18n="howSub">This room is a stand-in for a real video call. It only shows your own camera; nothing is sent anywhere.</p>
     <ol>
-      <li><div><b data-i18n="s1t">Install the extension</b><span data-i18n-html="s1d">Download the repository, open <code>chrome://extensions</code>, turn on Developer mode, click <b style="display:inline">Load unpacked</b> and choose the <a href="https://github.com/masonzeng702550/zoom-mullet-begone/tree/main/browser-extension" target="_blank" rel="noopener">browser-extension</a> folder. Details: <a data-readme href="https://github.com/masonzeng702550/zoom-mullet-begone#browser-extension-no-obs" target="_blank" rel="noopener">README</a>. Then reload this page.</span></div></li>
-      <li><div><b data-i18n="s2t">Start the app</b><span data-i18n-html="s2d">In the project folder run <code>python -m zoom_mullet_begone --background</code>. Its settings page is at <a href="http://127.0.0.1:8765/" target="_blank" rel="noopener">127.0.0.1:8765</a>.</span></div></li>
-      <li><div><b data-i18n="s3t">Pick “Zoom Mullet Begone”</b><span data-i18n-html="s3d">Click <b style="display:inline">Turn on camera</b>, then choose <b style="display:inline">Zoom Mullet Begone</b> in the camera menu at the bottom. The pants appear a few seconds later.</span></div></li>
+      <li><div><b data-i18n="s1t"></b><span data-i18n-html="s1d"></span></div></li>
+      <li><div><b data-i18n="s2t"></b><span data-i18n-html="s2d"></span></div></li>
+      <li><div><b data-i18n="s3t"></b><span data-i18n-html="s3d"></span></div></li>
     </ol>
-    <p class="note" data-i18n="note">The status chip at the top shows whether this browser has the extension. Without it, this page just shows your normal camera.</p>
+    <p class="note" data-i18n-html="note"></p>
   </aside>
 </main>
 
@@ -210,264 +235,349 @@
   </div>
 </div>
 
-<script>
-(() => {
-  "use strict";
-  const EXT_ID = "zoom-mullet-begone-camera";
-  const EXT_LABEL = "Zoom Mullet Begone";
-  const REPO = "https://github.com/masonzeng702550/zoom-mullet-begone";
+<script type="module">
+import { PantsEngine } from "./pants-engine.js";
 
-  const T = {
-    en: {
-      brand: "Zoom Mullet Begone · Test room",
-      chipChecking: "Checking for extension…",
-      chipFound: "Extension found",
-      chipMissing: "Extension not found",
-      promptIdle: "Your camera is off. Nothing is shared: the video stays in this tab.",
-      promptAsking: "Waiting for camera permission…",
-      join: "Turn on camera",
-      retry: "Try again",
-      you: "You",
-      room: "Test room",
-      pickerLabel: "Camera",
-      pickerNone: "No cameras yet",
-      pickerDefault: "Default camera",
-      pickerCamera: "Camera",
-      pickerMissing: "Zoom Mullet Begone (extension not installed)",
-      howTitle: "How to test",
-      howSub: "This room is a stand-in for a real video call. It only shows your own camera; nothing is sent anywhere.",
-      s1t: "Install the extension",
-      s1d: 'Download the repository, open <code>chrome://extensions</code>, turn on Developer mode, click <b style="display:inline">Load unpacked</b> and choose the <a href="' + REPO + '/tree/main/browser-extension" target="_blank" rel="noopener">browser-extension</a> folder. Details: <a href="' + REPO + '#browser-extension-no-obs" target="_blank" rel="noopener">README</a>. Then reload this page.',
-      s2t: "Start the app",
-      s2d: 'In the project folder run <code>python -m zoom_mullet_begone --background</code>. Its settings page is at <a href="http://127.0.0.1:8765/" target="_blank" rel="noopener">127.0.0.1:8765</a>.',
-      s3t: "Pick “Zoom Mullet Begone”",
-      s3d: 'Click <b style="display:inline">Turn on camera</b>, then choose <b style="display:inline">Zoom Mullet Begone</b> in the camera menu at the bottom. The pants appear a few seconds later.',
-      note: "The status chip at the top shows whether this browser has the extension. Without it, this page just shows your normal camera.",
-      leftTitle: "You left the test room",
-      rejoin: "Rejoin",
-      micOn: "Turn off microphone", micOff: "Turn on microphone",
-      camOn: "Turn off camera", camOff: "Turn on camera",
-      leave: "Leave call", info: "How to test", close: "Close", lang: "Switch language",
-      errDenied: "Camera access is blocked. Allow the camera with the icon in the address bar, then try again.",
-      errNotFound: "No camera was found. Connect a camera, or install the extension and start the app to use the Zoom Mullet Begone camera.",
-      errBusy: "The camera is in use by another app or could not start. Close the other app and try again.",
-      errInsecure: "This browser does not allow camera access here. Open the page over https (or localhost).",
-      errOther: "The camera could not start: ",
-      errMicDenied: "Microphone access is blocked.",
-      errMicNone: "No microphone was found."
-    },
-    zh: {
-      brand: "Zoom Mullet Begone · 測試會議室",
-      chipChecking: "正在檢查擴充功能…",
-      chipFound: "已偵測到擴充功能",
-      chipMissing: "找不到擴充功能",
-      promptIdle: "鏡頭目前關閉。畫面只留在這個分頁，不會傳到任何地方。",
-      promptAsking: "等待鏡頭權限…",
-      join: "開啟鏡頭",
-      retry: "再試一次",
-      you: "你",
-      room: "測試會議室",
-      pickerLabel: "鏡頭",
-      pickerNone: "尚無鏡頭",
-      pickerDefault: "預設鏡頭",
-      pickerCamera: "鏡頭",
-      pickerMissing: "Zoom Mullet Begone（尚未安裝擴充功能）",
-      howTitle: "測試方式",
-      howSub: "這個會議室用來模擬視訊通話，只會顯示你自己的鏡頭，不會傳送任何畫面。",
-      s1t: "安裝擴充功能",
-      s1d: '下載這個儲存庫，打開 <code>chrome://extensions</code>，開啟「開發人員模式」，按「<b style="display:inline">載入未封裝項目</b>」，選擇 <a href="' + REPO + '/tree/main/browser-extension" target="_blank" rel="noopener">browser-extension</a> 資料夾。詳細說明見 <a href="' + REPO + '/blob/main/README.zh-TW.md#瀏覽器擴充功能不需要-obs" target="_blank" rel="noopener">README</a>。裝好後重新整理這個頁面。',
-      s2t: "啟動程式",
-      s2d: '在專案資料夾執行 <code>python -m zoom_mullet_begone --background</code>。設定頁在 <a href="http://127.0.0.1:8765/" target="_blank" rel="noopener">127.0.0.1:8765</a>。',
-      s3t: "選擇「Zoom Mullet Begone」",
-      s3d: '按「<b style="display:inline">開啟鏡頭</b>」，再從下方的鏡頭選單選 <b style="display:inline">Zoom Mullet Begone</b>，幾秒後就會出現褲子。',
-      note: "上方的狀態標籤會顯示這個瀏覽器是否裝了擴充功能。沒裝的話，這個頁面只會顯示一般鏡頭。",
-      leftTitle: "你已離開測試會議室",
-      rejoin: "重新加入",
-      micOn: "關閉麥克風", micOff: "開啟麥克風",
-      camOn: "關閉鏡頭", camOff: "開啟鏡頭",
-      leave: "離開通話", info: "測試方式", close: "關閉", lang: "切換語言",
-      errDenied: "鏡頭權限被封鎖。請用網址列上的圖示允許使用鏡頭，再試一次。",
-      errNotFound: "找不到鏡頭。請接上鏡頭，或安裝擴充功能並啟動程式，改用 Zoom Mullet Begone 鏡頭。",
-      errBusy: "鏡頭被其他程式占用或無法啟動。請關閉其他程式後再試一次。",
-      errInsecure: "這個瀏覽器不允許在這裡使用鏡頭。請用 https（或 localhost）開啟這個頁面。",
-      errOther: "鏡頭無法啟動：",
-      errMicDenied: "麥克風權限被封鎖。",
-      errMicNone: "找不到麥克風。"
-    }
-  };
+const EXT_ID = "zoom-mullet-begone-camera";
+const EXT_LABEL = "Zoom Mullet Begone";
+const REPO = "https://github.com/masonzeng702550/zoom-mullet-begone";
+const GARMENT_NAMES = {
+  en: { dress_navy: "Navy trousers", chino_khaki: "Khaki chinos", jeans_indigo: "Jeans" },
+  zh: { dress_navy: "深藍西裝褲", chino_khaki: "卡其褲", jeans_indigo: "牛仔褲" },
+};
+const COLORS = [["", "own"], ["#1c1c1c", "black"], ["#6b6b6b", "gray"], ["#6e1e28", "burgundy"]];
 
-  const $ = (id) => document.getElementById(id);
-  const md = navigator.mediaDevices;
-  const video = $("video"), selfTile = $("selfTile"), picker = $("picker");
-  const camBtn = $("cam"), micBtn = $("mic"), joinBtn = $("join"), promptText = $("promptText");
+const T = {
+  en: {
+    brand: "Zoom Mullet Begone · Test room",
+    st_loading: "Loading the pose model…", st_ready: "Ready: turn on your camera",
+    st_nobody: "Looking for you…", st_nohips: "Step back: keep your waist and legs in view",
+    st_dressed: "Pants on", st_off: "Pants off (comparing)", st_extension: "Using the extension camera",
+    st_error: "This browser cannot run the demo",
+    promptIdle: "Your camera is off. Everything runs in this tab: your video never leaves your computer.",
+    promptAsking: "Waiting for camera permission…",
+    join: "Turn on camera", retry: "Try again", upload: "Upload a photo or video", compare: "Hold to compare",
+    you: "You", room: "Test room", pickerLabel: "Camera", pickerDefault: "Default camera", pickerCamera: "Camera",
+    pickerFile: "Uploaded file",
+    colors: { own: "Original color", black: "Black", gray: "Gray", burgundy: "Burgundy" },
+    howTitle: "How to try it",
+    howSub: "Everything runs in this tab with your graphics card. Your video is never uploaded.",
+    s1t: "Turn on your camera",
+    s1d: "Or upload a photo or short video of yourself. The first start downloads the pose model (about 15 MB).",
+    s2t: "Step back",
+    s2d: "Keep your waist and legs in view. The pants follow your hips, knees and ankles.",
+    s3t: "Try the pants",
+    s3d: 'Pick a style and a color at the top of your video. Hold <b style="display:inline">Hold to compare</b> to see the original.',
+    note: 'Want it in real meetings (Google Meet, Zoom, Teams)? Install the desktop app and the browser extension: see the <a href="' + REPO + '" target="_blank" rel="noopener">README</a>. This demo leaves out a few things the app does (close-up shots, forearms in front of the pants, seam lines).',
+    leftTitle: "You left the test room", rejoin: "Rejoin",
+    micOn: "Turn off microphone", micOff: "Turn on microphone", camOn: "Turn off camera", camOff: "Turn on camera",
+    leave: "Leave call", info: "How to try it", close: "Close", lang: "Switch language",
+    errDenied: "Camera access is blocked. Allow the camera with the icon in the address bar, then try again, or upload a photo.",
+    errNotFound: "No camera was found. Upload a photo or video instead.",
+    errBusy: "The camera is in use by another app or could not start. Close the other app and try again.",
+    errInsecure: "This browser does not allow camera access here. Open the page over https.",
+    errFile: "That file could not be opened. Try a JPG, PNG or MP4.",
+    errOther: "The camera could not start: ",
+    errMicDenied: "Microphone access is blocked.", errMicNone: "No microphone was found.",
+  },
+  zh: {
+    brand: "Zoom Mullet Begone · 測試會議室",
+    st_loading: "正在載入姿勢模型…", st_ready: "準備就緒：請開啟鏡頭",
+    st_nobody: "正在找你…", st_nohips: "請往後退，讓腰和腿入鏡",
+    st_dressed: "已套上褲子", st_off: "已暫時拿掉褲子（比較中）", st_extension: "正在使用擴充功能的鏡頭",
+    st_error: "這個瀏覽器無法執行展示",
+    promptIdle: "鏡頭目前關閉。所有處理都在這個分頁裡進行，畫面不會離開你的電腦。",
+    promptAsking: "等待鏡頭權限…",
+    join: "開啟鏡頭", retry: "再試一次", upload: "上傳照片或影片", compare: "按住看原圖",
+    you: "你", room: "測試會議室", pickerLabel: "鏡頭", pickerDefault: "預設鏡頭", pickerCamera: "鏡頭",
+    pickerFile: "上傳的檔案",
+    colors: { own: "原本的顏色", black: "黑", gray: "灰", burgundy: "酒紅" },
+    howTitle: "試用方式",
+    howSub: "所有處理都在這個分頁裡用你的顯示卡執行，畫面不會上傳。",
+    s1t: "開啟鏡頭",
+    s1d: "也可以上傳一張你的照片或短片。第一次啟動會下載姿勢模型（約 15 MB）。",
+    s2t: "往後退",
+    s2d: "讓腰和腿都在畫面裡，褲子會跟著你的髖部、膝蓋和腳踝移動。",
+    s3t: "試穿褲子",
+    s3d: '在畫面上方選擇樣式和顏色。按住「<b style="display:inline">按住看原圖</b>」可以比較原本的樣子。',
+    note: '想在真正的會議（Google Meet、Zoom、Teams）裡使用？請安裝桌面程式和瀏覽器擴充功能，詳見 <a href="' + REPO + '/blob/main/README.zh-TW.md" target="_blank" rel="noopener">README</a>。這個展示省略了桌面程式的幾項功能（近距離畫面、前臂擋在褲子前面、縫線細節）。',
+    leftTitle: "你已離開測試會議室", rejoin: "重新加入",
+    micOn: "關閉麥克風", micOff: "開啟麥克風", camOn: "關閉鏡頭", camOff: "開啟鏡頭",
+    leave: "離開通話", info: "試用方式", close: "關閉", lang: "切換語言",
+    errDenied: "鏡頭權限被封鎖。請用網址列上的圖示允許使用鏡頭再試一次，或改為上傳照片。",
+    errNotFound: "找不到鏡頭。可以改為上傳照片或影片。",
+    errBusy: "鏡頭被其他程式占用或無法啟動。請關閉其他程式後再試一次。",
+    errInsecure: "這個瀏覽器不允許在這裡使用鏡頭。請用 https 開啟這個頁面。",
+    errFile: "無法開啟這個檔案。請試試 JPG、PNG 或 MP4。",
+    errOther: "鏡頭無法啟動：",
+    errMicDenied: "麥克風權限被封鎖。", errMicNone: "找不到麥克風。",
+  },
+};
 
-  let lang = "en";
-  try { lang = localStorage.getItem("zmb-lang") || ""; } catch (e) { /* storage blocked */ }
-  if (lang !== "en" && lang !== "zh") lang = (navigator.language || "").toLowerCase().startsWith("zh") ? "zh" : "en";
-  let videoStream = null, audioStream = null;
-  let extFound = null, chosen = "", promptKey = "promptIdle", promptExtra = "", busy = false;
-  const t = (key) => T[lang][key] ?? T.en[key] ?? key;
+const $ = (id) => document.getElementById(id);
+const md = navigator.mediaDevices;
+const video = $("video"), stage = $("stage"), selfTile = $("selfTile"), picker = $("picker");
+const camBtn = $("cam"), micBtn = $("mic"), joinBtn = $("join"), uploadBtn = $("upload"), promptText = $("promptText");
 
-  // --- language ---------------------------------------------------------
-  function applyLang() {
-    document.documentElement.lang = lang === "zh" ? "zh-Hant" : "en";
-    document.title = t("brand");
-    document.querySelectorAll("[data-i18n]").forEach((el) => { el.textContent = t(el.dataset.i18n); });
-    document.querySelectorAll("[data-i18n-html]").forEach((el) => { el.innerHTML = t(el.dataset.i18nHtml); });
-    $("lang").textContent = lang === "zh" ? "English" : "中文";
-    $("lang").setAttribute("aria-label", t("lang"));
-    $("leave").setAttribute("aria-label", t("leave")); $("leave").title = t("leave");
-    $("info").setAttribute("aria-label", t("info")); $("info").title = t("info");
-    $("closePanel").setAttribute("aria-label", t("close"));
-    renderChip(); renderPrompt(); renderButtons(); refreshDevices(); clock();
-  }
-  $("lang").addEventListener("click", () => {
-    lang = lang === "zh" ? "en" : "zh";
-    try { localStorage.setItem("zmb-lang", lang); } catch (e) { /* storage blocked */ }
-    applyLang();
-  });
+let lang = "en";
+try { lang = localStorage.getItem("zmb-lang") || ""; } catch (e) { /* storage blocked */ }
+if (lang !== "en" && lang !== "zh") lang = (navigator.language || "").toLowerCase().startsWith("zh") ? "zh" : "en";
+let videoStream = null, audioStream = null, fileUrl = null;
+let chosen = "", promptKey = "promptIdle", promptExtra = "", busy = false;
+let engine = null, engineStatus = "loading", garmentId = "dress_navy", color = "";
+const t = (key) => T[lang][key] ?? T.en[key] ?? key;
 
-  // --- status chip & prompt ----------------------------------------------
-  function renderChip() {
-    const chip = $("chip");
-    chip.dataset.state = extFound === null ? "checking" : extFound ? "found" : "missing";
-    $("chipText").textContent = t(extFound === null ? "chipChecking" : extFound ? "chipFound" : "chipMissing");
-  }
-  function renderPrompt() {
-    promptText.textContent = t(promptKey) + promptExtra;
-    promptText.classList.toggle("error", promptKey.startsWith("err"));
-    joinBtn.textContent = t(promptKey.startsWith("err") ? "retry" : "join");
-    joinBtn.disabled = busy;
-  }
-  function setPrompt(key, extra = "") { promptKey = key; promptExtra = extra; renderPrompt(); }
-
-  function renderButtons() {
-    const camOn = !!videoStream, micOn = !!(audioStream && audioStream.getAudioTracks().some((tr) => tr.enabled));
-    camBtn.setAttribute("aria-pressed", String(camOn));
-    camBtn.querySelector(".on").toggleAttribute("hidden", !camOn); camBtn.querySelector(".off").toggleAttribute("hidden", camOn);
-    camBtn.setAttribute("aria-label", t(camOn ? "camOn" : "camOff")); camBtn.title = t(camOn ? "camOn" : "camOff");
-    micBtn.setAttribute("aria-pressed", String(micOn));
-    micBtn.querySelector(".on").toggleAttribute("hidden", !micOn); micBtn.querySelector(".off").toggleAttribute("hidden", micOn);
-    micBtn.setAttribute("aria-label", t(micOn ? "micOn" : "micOff")); micBtn.title = t(micOn ? "micOn" : "micOff");
-    $("selfMuted").hidden = micOn;
-    selfTile.dataset.video = camOn ? "on" : "off";
-  }
-
-  // --- devices ------------------------------------------------------------
-  async function refreshDevices() {
-    if (!md || !md.enumerateDevices) { extFound = false; renderChip(); fillPicker([]); return; }
-    let devices = [];
-    try { devices = await md.enumerateDevices(); } catch (e) { /* treat as none */ }
-    const cams = devices.filter((d) => d.kind === "videoinput");
-    extFound = cams.some((d) => d.deviceId === EXT_ID);
-    renderChip();
-    fillPicker(cams);
-  }
-  function fillPicker(cams) {
-    picker.textContent = "";
-    // Before permission, real cameras are listed with empty ids and labels.
-    const real = cams.filter((d) => d.deviceId !== EXT_ID && d.deviceId);
-    const add = (value, label, disabled = false) => {
-      const o = document.createElement("option");
-      o.value = value; o.textContent = label; o.disabled = disabled;
-      picker.appendChild(o);
-    };
-    if (!real.length) add("", t("pickerDefault"));
-    real.forEach((d, i) => add(d.deviceId, d.label || `${t("pickerCamera")} ${i + 1}`));
-    const ext = cams.find((d) => d.deviceId === EXT_ID);
-    if (ext) add(EXT_ID, ext.label || EXT_LABEL);
-    else add("__missing", t("pickerMissing"), true);
-    const current = videoStream && videoStream.getVideoTracks()[0];
-    const activeId = chosen || (current && current.getSettings().deviceId) || "";
-    if ([...picker.options].some((o) => o.value === activeId && !o.disabled)) picker.value = activeId;
-  }
-  if (md && md.addEventListener) md.addEventListener("devicechange", refreshDevices);
-
-  // --- camera -------------------------------------------------------------
-  function stopStream(s) { if (s) s.getTracks().forEach((tr) => tr.stop()); }
-
-  function errorKey(err, mic) {
-    const name = err && err.name;
-    if (name === "NotAllowedError" || name === "SecurityError" || name === "PermissionDeniedError") return mic ? "errMicDenied" : "errDenied";
-    if (name === "NotFoundError" || name === "DevicesNotFoundError" || name === "OverconstrainedError") return mic ? "errMicNone" : "errNotFound";
-    if (name === "NotReadableError" || name === "TrackStartError" || name === "AbortError") return "errBusy";
-    return "errOther";
-  }
-
-  async function startCamera(deviceId = chosen) {
-    if (busy) return;
-    if (!md || !md.getUserMedia) { setPrompt("errInsecure"); return; }
-    busy = true; setPrompt("promptAsking");
-    try {
-      const constraints = { video: deviceId ? { deviceId: { exact: deviceId } } : { width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false };
-      const stream = await md.getUserMedia(constraints);
-      stopStream(videoStream);
-      videoStream = stream;
-      chosen = deviceId;
-      video.srcObject = stream;
-      stream.getVideoTracks().forEach((tr) => tr.addEventListener("ended", () => { if (videoStream === stream) stopCamera(); }));
-      busy = false; setPrompt("promptIdle");
-    } catch (err) {
-      busy = false;
-      const key = errorKey(err, false);
-      setPrompt(key, key === "errOther" ? (err && (err.message || err.name)) || "" : "");
-    }
-    renderButtons();
-    refreshDevices();
-  }
-  function stopCamera() {
-    stopStream(videoStream); videoStream = null; video.srcObject = null;
-    renderButtons();
-  }
-
-  joinBtn.addEventListener("click", () => startCamera());
-  camBtn.addEventListener("click", () => (videoStream ? stopCamera() : startCamera()));
-  picker.addEventListener("change", () => {
-    chosen = picker.value;
-    if (videoStream || chosen) startCamera(chosen);
-  });
-
-  // --- microphone -----------------------------------------------------------
-  micBtn.addEventListener("click", async () => {
-    if (audioStream) {
-      const tracks = audioStream.getAudioTracks();
-      const on = !tracks.some((tr) => tr.enabled);
-      tracks.forEach((tr) => { tr.enabled = on; });
-      renderButtons();
-      return;
-    }
-    if (!md || !md.getUserMedia) { setPrompt("errInsecure"); return; }
-    try {
-      audioStream = await md.getUserMedia({ audio: true, video: false });
-    } catch (err) {
-      setPrompt(errorKey(err, true));
-    }
-    renderButtons();
-  });
-
-  // --- leave --------------------------------------------------------------
-  $("leave").addEventListener("click", () => {
-    stopCamera();
-    stopStream(audioStream); audioStream = null;
-    renderButtons();
-    $("leftScreen").hidden = false;
-    $("rejoin").focus();
-  });
-  $("rejoin").addEventListener("click", () => { $("leftScreen").hidden = true; setPrompt("promptIdle"); });
-
-  // --- panel --------------------------------------------------------------
-  const panel = $("panel"), info = $("info");
-  const setPanel = (open) => { panel.hidden = !open; info.setAttribute("aria-expanded", String(open)); };
-  info.addEventListener("click", () => setPanel(panel.hidden));
-  $("closePanel").addEventListener("click", () => setPanel(false));
-  if (matchMedia("(max-width: 900px)").matches) setPanel(false);
-
-  // --- clock --------------------------------------------------------------
-  function clock() { $("clock").textContent = new Date().toLocaleTimeString(lang === "zh" ? "zh-TW" : "en-US", { hour: "numeric", minute: "2-digit" }); }
-  setInterval(clock, 15000);
-
+// --- language ---------------------------------------------------------------
+function applyLang() {
+  document.documentElement.lang = lang === "zh" ? "zh-Hant" : "en";
+  document.title = t("brand");
+  document.querySelectorAll("[data-i18n]").forEach((el) => { el.textContent = t(el.dataset.i18n); });
+  document.querySelectorAll("[data-i18n-html]").forEach((el) => { el.innerHTML = t(el.dataset.i18nHtml); });
+  $("lang").textContent = lang === "zh" ? "English" : "中文";
+  $("lang").setAttribute("aria-label", t("lang"));
+  $("leave").setAttribute("aria-label", t("leave")); $("leave").title = t("leave");
+  $("info").setAttribute("aria-label", t("info")); $("info").title = t("info");
+  $("closePanel").setAttribute("aria-label", t("close"));
+  renderChip(); renderPrompt(); renderButtons(); renderWardrobe(); refreshDevices(); clock();
+}
+$("lang").addEventListener("click", () => {
+  lang = lang === "zh" ? "en" : "zh";
+  try { localStorage.setItem("zmb-lang", lang); } catch (e) { /* storage blocked */ }
   applyLang();
-})();
+});
+
+// --- status chip & prompt -------------------------------------------------
+function renderChip() {
+  const chip = $("chip");
+  const live = !!(videoStream || fileUrl);
+  let key = engineStatus;
+  if (engineStatus !== "loading" && engineStatus !== "error") {
+    if (chosen === EXT_ID && videoStream) key = "extension";
+    else if (!live) key = "ready";
+    else if (engine && !engine.enabled) key = "off";
+  }
+  chip.dataset.state = { dressed: "found", extension: "found", error: "error", nohips: "hint", nobody: "hint" }[key] || "checking";
+  $("chipText").textContent = t("st_" + key);
+}
+function renderPrompt() {
+  promptText.textContent = t(promptKey) + promptExtra;
+  promptText.classList.toggle("error", promptKey.startsWith("err"));
+  joinBtn.textContent = t(promptKey.startsWith("err") ? "retry" : "join");
+  joinBtn.disabled = busy;
+}
+function setPrompt(key, extra = "") { promptKey = key; promptExtra = extra; renderPrompt(); }
+
+function renderButtons() {
+  const camOn = !!videoStream, micOn = !!(audioStream && audioStream.getAudioTracks().some((tr) => tr.enabled));
+  camBtn.setAttribute("aria-pressed", String(camOn));
+  camBtn.querySelector(".on").toggleAttribute("hidden", !camOn); camBtn.querySelector(".off").toggleAttribute("hidden", camOn);
+  camBtn.setAttribute("aria-label", t(camOn ? "camOn" : "camOff")); camBtn.title = t(camOn ? "camOn" : "camOff");
+  micBtn.setAttribute("aria-pressed", String(micOn));
+  micBtn.querySelector(".on").toggleAttribute("hidden", !micOn); micBtn.querySelector(".off").toggleAttribute("hidden", micOn);
+  micBtn.setAttribute("aria-label", t(micOn ? "micOn" : "micOff")); micBtn.title = t(micOn ? "micOn" : "micOff");
+  $("selfMuted").hidden = micOn;
+  selfTile.dataset.video = camOn || fileUrl ? "on" : "off";
+  stage.classList.toggle("mirror", camOn); // a self-view is mirrored; an uploaded file is not
+}
+
+// --- wardrobe ---------------------------------------------------------------
+function renderWardrobe() {
+  const bar = $("wardrobe");
+  bar.textContent = "";
+  bar.setAttribute("aria-label", lang === "zh" ? "褲子" : "Pants");
+  for (const id of Object.keys(GARMENT_NAMES.en)) {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "pill";
+    b.textContent = GARMENT_NAMES[lang][id];
+    b.setAttribute("aria-pressed", String(id === garmentId));
+    b.addEventListener("click", () => { garmentId = id; dress(); });
+    bar.appendChild(b);
+  }
+  for (const [hex, key] of COLORS) {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "swatch" + (hex ? "" : " own");
+    if (hex) b.style.background = hex;
+    b.title = b.ariaLabel = t("colors")[key];
+    b.setAttribute("aria-label", t("colors")[key]);
+    b.setAttribute("aria-pressed", String(hex === color));
+    b.addEventListener("click", () => { color = hex; dress(); });
+    bar.appendChild(b);
+  }
+}
+async function dress() {
+  renderWardrobe();
+  if (engine) await engine.setGarment(garmentId, color);
+}
+const compare = $("compare");
+const setCompare = (on) => { if (engine) { engine.enabled = !on; renderChip(); } };
+compare.addEventListener("pointerdown", (e) => { compare.setPointerCapture(e.pointerId); setCompare(true); });
+compare.addEventListener("pointerup", () => setCompare(false));
+compare.addEventListener("pointercancel", () => setCompare(false));
+compare.addEventListener("keydown", (e) => { if (e.key === " " || e.key === "Enter") setCompare(true); });
+compare.addEventListener("keyup", () => setCompare(false));
+
+// --- engine -----------------------------------------------------------------
+async function loadEngine() {
+  try {
+    engine = await PantsEngine.create(stage, "garments/", (s) => { engineStatus = s; renderChip(); });
+    await engine.setGarment(garmentId, color);
+    engineStatus = "ready";
+  } catch (e) {
+    console.error(e);
+    engineStatus = "error";
+  }
+  renderChip();
+  feedEngine();
+}
+function feedEngine() {
+  if (!engine) return;
+  if (videoStream || fileUrl) {
+    engine.enabled = chosen !== EXT_ID; // the extension's camera already wears pants
+    engine.setSource(fileUrl && fileUrl.image ? fileUrl.image : video);
+  } else {
+    engine.stop();
+  }
+  renderChip();
+}
+
+// --- devices --------------------------------------------------------------
+async function refreshDevices() {
+  let devices = [];
+  try { devices = md && md.enumerateDevices ? await md.enumerateDevices() : []; } catch (e) { /* treat as none */ }
+  const cams = devices.filter((d) => d.kind === "videoinput");
+  picker.textContent = "";
+  const addOpt = (value, label) => {
+    const o = document.createElement("option");
+    o.value = value; o.textContent = label;
+    picker.appendChild(o);
+  };
+  const real = cams.filter((d) => d.deviceId && d.deviceId !== EXT_ID);
+  if (!real.length) addOpt("", t("pickerDefault"));
+  real.forEach((d, i) => addOpt(d.deviceId, d.label || `${t("pickerCamera")} ${i + 1}`));
+  if (cams.some((d) => d.deviceId === EXT_ID)) addOpt(EXT_ID, EXT_LABEL);
+  if (fileUrl) addOpt("__file", t("pickerFile"));
+  const current = videoStream && videoStream.getVideoTracks()[0];
+  const activeId = fileUrl ? "__file" : chosen || (current && current.getSettings().deviceId) || "";
+  if ([...picker.options].some((o) => o.value === activeId)) picker.value = activeId;
+}
+if (md && md.addEventListener) md.addEventListener("devicechange", refreshDevices);
+
+// --- camera & files ---------------------------------------------------------
+function stopStream(s) { if (s) s.getTracks().forEach((tr) => tr.stop()); }
+function clearFile() {
+  if (!fileUrl) return;
+  URL.revokeObjectURL(fileUrl.url);
+  fileUrl = null;
+  video.removeAttribute("src"); video.loop = false;
+}
+function errorKey(err, mic) {
+  const name = err && err.name;
+  if (name === "NotAllowedError" || name === "SecurityError" || name === "PermissionDeniedError") return mic ? "errMicDenied" : "errDenied";
+  if (name === "NotFoundError" || name === "DevicesNotFoundError" || name === "OverconstrainedError") return mic ? "errMicNone" : "errNotFound";
+  if (name === "NotReadableError" || name === "TrackStartError" || name === "AbortError") return "errBusy";
+  return "errOther";
+}
+
+async function startCamera(deviceId = chosen) {
+  if (busy) return;
+  if (!md || !md.getUserMedia) { setPrompt("errInsecure"); return; }
+  busy = true; setPrompt("promptAsking");
+  try {
+    const constraints = { video: deviceId ? { deviceId: { exact: deviceId } } : { width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false };
+    const stream = await md.getUserMedia(constraints);
+    stopStream(videoStream); clearFile();
+    videoStream = stream; chosen = deviceId;
+    video.srcObject = stream;
+    await video.play().catch(() => {});
+    stream.getVideoTracks().forEach((tr) => tr.addEventListener("ended", () => { if (videoStream === stream) stopCamera(); }));
+    busy = false; setPrompt("promptIdle");
+  } catch (err) {
+    busy = false;
+    const key = errorKey(err, false);
+    setPrompt(key, key === "errOther" ? (err && (err.message || err.name)) || "" : "");
+  }
+  renderButtons(); refreshDevices(); feedEngine();
+}
+function stopCamera() {
+  stopStream(videoStream); videoStream = null; video.srcObject = null;
+  renderButtons(); feedEngine();
+}
+
+async function openFile(file) {
+  stopStream(videoStream); videoStream = null; video.srcObject = null; clearFile();
+  const url = URL.createObjectURL(file);
+  try {
+    if (file.type.startsWith("video/")) {
+      video.src = url; video.loop = true;
+      await video.play();
+      fileUrl = { url };
+    } else {
+      const img = new Image();
+      img.src = url;
+      await img.decode();
+      fileUrl = { url, image: img };
+    }
+    chosen = "";
+    setPrompt("promptIdle");
+  } catch (e) {
+    URL.revokeObjectURL(url);
+    fileUrl = null;
+    setPrompt("errFile");
+  }
+  renderButtons(); refreshDevices(); feedEngine();
+}
+
+joinBtn.addEventListener("click", () => startCamera());
+uploadBtn.addEventListener("click", () => $("file").click());
+$("file").addEventListener("change", (e) => { const f = e.target.files[0]; if (f) openFile(f); e.target.value = ""; });
+camBtn.addEventListener("click", () => (videoStream ? stopCamera() : startCamera()));
+picker.addEventListener("change", () => {
+  if (picker.value === "__file") return;
+  chosen = picker.value;
+  startCamera(chosen);
+});
+
+// --- microphone ---------------------------------------------------------------
+micBtn.addEventListener("click", async () => {
+  if (audioStream) {
+    const tracks = audioStream.getAudioTracks();
+    const on = !tracks.some((tr) => tr.enabled);
+    tracks.forEach((tr) => { tr.enabled = on; });
+    renderButtons();
+    return;
+  }
+  if (!md || !md.getUserMedia) { setPrompt("errInsecure"); return; }
+  try {
+    audioStream = await md.getUserMedia({ audio: true, video: false });
+  } catch (err) {
+    setPrompt(errorKey(err, true));
+  }
+  renderButtons();
+});
+
+// --- leave --------------------------------------------------------------------
+$("leave").addEventListener("click", () => {
+  stopCamera(); clearFile();
+  stopStream(audioStream); audioStream = null;
+  renderButtons(); feedEngine(); refreshDevices();
+  $("leftScreen").hidden = false;
+  $("rejoin").focus();
+});
+$("rejoin").addEventListener("click", () => { $("leftScreen").hidden = true; setPrompt("promptIdle"); });
+
+// --- panel --------------------------------------------------------------------
+const panel = $("panel"), info = $("info");
+const setPanel = (open) => { panel.hidden = !open; info.setAttribute("aria-expanded", String(open)); };
+info.addEventListener("click", () => setPanel(panel.hidden));
+$("closePanel").addEventListener("click", () => setPanel(false));
+if (matchMedia("(max-width: 900px)").matches) setPanel(false);
+
+// --- clock --------------------------------------------------------------------
+function clock() { $("clock").textContent = new Date().toLocaleTimeString(lang === "zh" ? "zh-TW" : "en-US", { hour: "numeric", minute: "2-digit" }); }
+setInterval(clock, 15000);
+
+applyLang();
+loadEngine();
 </script>
 </body>
 </html>

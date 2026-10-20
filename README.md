@@ -4,7 +4,7 @@
 
 > **Your Zoom mullet, begone.** Business on top, business on the bottom. (Formerly *meet-pants*.)
 
-**[Try it in the online test room →](https://masonzeng702550.github.io/zoom-mullet-begone/)** A practice meeting room for the browser extension; your video stays on your computer.
+**[Try it in your browser →](https://masonzeng702550.github.io/zoom-mullet-begone/)** No install: turn on your camera or upload a photo and the pants appear. Everything runs in the page; your video never leaves your computer.
 
 Virtual pants for video calls. zoom-mullet-begone tracks your legs with a pose model, draws a pair of pants that follows them, and sends the result to a virtual camera that Google Meet, Zoom, Teams and other apps can select.
 
@@ -81,7 +81,6 @@ The extension in `browser-extension/` adds a camera named **Zoom Mullet Begone**
 1. Start zoom-mullet-begone, preferably in background mode: `.venv/bin/python -m zoom_mullet_begone --background`.
 2. In Google Meet: Settings → Video → Camera → **Zoom Mullet Begone**. Other sites list it wherever you choose a camera.
 3. The extension's toolbar button shows whether zoom-mullet-begone is running and links to the settings page.
-4. To try it without a real meeting, open the [online test room](https://masonzeng702550.github.io/zoom-mullet-begone/), turn on the camera and pick **Zoom Mullet Begone**.
 
 **Privacy and safety:**
 

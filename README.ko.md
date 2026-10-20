@@ -4,7 +4,7 @@
 
 > **Zoom 멀릿, 물러가라!** 위도 비즈니스, 아래도 비즈니스. (예전 이름 *meet-pants*)
 
-**[온라인 테스트 회의실에서 써 보기 →](https://masonzeng702550.github.io/zoom-mullet-begone/)** 브라우저 확장 프로그램을 시험해 보는 연습용 회의실입니다. 영상은 이 컴퓨터 밖으로 나가지 않습니다.
+**[브라우저에서 바로 써 보기 →](https://masonzeng702550.github.io/zoom-mullet-begone/)** 설치 필요 없음: 카메라를 켜거나 사진을 올리면 바지가 나타납니다. 모든 처리는 페이지 안에서 이루어지며, 영상은 이 컴퓨터 밖으로 나가지 않습니다.
 
 화상 회의용 가상 바지입니다. zoom-mullet-begone는 자세 추정 모델로 다리를 추적해 다리 움직임을 따라가는 바지를 그리고, 그 영상을 가상 카메라로 보냅니다. Google Meet, Zoom, Teams 같은 앱에서 이 카메라를 선택해 사용할 수 있습니다.
 
@@ -81,7 +81,6 @@ macOS에서는 처음 실행할 때 터미널 앱의 카메라 사용 권한을 
 1. zoom-mullet-begone를 실행합니다. 백그라운드 모드를 권장합니다: `.venv/bin/python -m zoom_mullet_begone --background`.
 2. Google Meet에서 설정 → 동영상 → 카메라 → **Zoom Mullet Begone**를 고릅니다. 다른 사이트에서도 카메라를 고르는 곳에 나타납니다.
 3. 도구 모음의 확장 프로그램 버튼에서 zoom-mullet-begone 실행 여부를 확인하고 설정 페이지를 열 수 있습니다.
-4. 실제 회의 없이 써 보려면 [온라인 테스트 회의실](https://masonzeng702550.github.io/zoom-mullet-begone/)을 열고 카메라를 켠 뒤 **Zoom Mullet Begone**을 고르세요.
 
 **개인정보와 보안:**
 
