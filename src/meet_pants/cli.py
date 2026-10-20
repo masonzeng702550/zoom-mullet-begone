@@ -4,10 +4,11 @@ from __future__ import annotations
 
 import argparse
 import sys
+import threading
 from pathlib import Path
 from typing import Any
 
-from meet_pants.config import MODES, Config, ConfigError, load_config
+from meet_pants.config import DEFAULT_CONFIG_PATH, MODES, Config, ConfigError, load_config
 
 DEBUG_LAYERS = ("landmarks", "masks", "mesh", "hud")
 
@@ -55,6 +56,11 @@ def build_parser() -> argparse.ArgumentParser:
         metavar="LAYERS",
         help=f"preview overlays, comma separated: {','.join(DEBUG_LAYERS)} or none",
     )
+    parser.add_argument(
+        "--settings",
+        action="store_true",
+        help="only open the pants settings page (style, color, auto matching) without the camera",
+    )
     parser.add_argument("--frames", type=int, help="stop after N frames (for testing)")
     parser.add_argument(
         "--record",
@@ -99,6 +105,10 @@ def main(argv: list[str] | None = None) -> int:
         print(f"config error: {e}", file=sys.stderr)
         return 2
 
+    settings_path = args.config or DEFAULT_CONFIG_PATH
+    if args.settings:
+        return settings_only(config, settings_path)
+
     for model in (config.pose_model_path, config.segmenter_model_path):
         if not model.exists():
             print(f"model not found: {model}\nrun: python scripts/download_models.py", file=sys.stderr)
@@ -107,4 +117,25 @@ def main(argv: list[str] | None = None) -> int:
     # Imported late so --help and config errors don't pay for loading mediapipe.
     from meet_pants.pipeline import run
 
-    return run(config, max_frames=args.frames, record=args.record)
+    return run(config, max_frames=args.frames, record=args.record, settings_path=settings_path)
+
+
+def settings_only(config: Config, settings_path: Path) -> int:
+    """Serve the settings page until Ctrl-C; choices are saved to `settings_path`."""
+    from meet_pants.ui.settings import GarmentChoice, SettingsHub, SettingsServer
+
+    choice = GarmentChoice(config.garment, config.garment_color, config.garment_auto)
+    hub = SettingsHub(Path(config.garments_dir), choice, settings_path)
+    try:
+        server = SettingsServer(hub, config.settings_port or 8765)
+    except OSError as e:
+        print(f"cannot open the settings page: {e}\nis meet-pants already running? press S in its preview", file=sys.stderr)
+        return 1
+    with server:
+        print(f"settings page: {server.url}  (saved to {settings_path}; Ctrl-C to stop)")
+        server.open()
+        try:
+            threading.Event().wait()
+        except KeyboardInterrupt:
+            pass
+    return 0

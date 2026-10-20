@@ -34,13 +34,14 @@ Then pick **OBS Virtual Camera** in your meeting app.
 | `--mode always` / `--mode off` | draw pants whenever hips are visible, or never |
 | `--garment jeans_indigo` | use this garment (`dress_navy`, `chino_khaki`, `jeans_indigo`); turns off automatic matching |
 | `--no-auto-garment` | keep the starting garment instead of matching the shirt |
+| `--settings` | only open the pants settings page (no camera) |
 | `--no-vcam` | preview only |
 | `--no-preview` | virtual camera only |
 | `--debug landmarks,masks,mesh,hud` | preview overlays (`none` to hide) |
 | `--record data/clip.mp4` | also save the raw camera input (to reproduce issues; `data/` is gitignored) |
 | `--config path.yaml` | config file (default `~/.config/meet-pants/config.yaml`) |
 
-Preview keys: `M` toggles pants on/off, `P` next garment (stops automatic matching), `A` toggles automatic matching, `D` cycles overlays (skeleton → skeleton + person mask (purple) and skin (orange) → mesh → off), `Esc` or `Q` quits.
+Preview keys: `M` toggles pants on/off, `P` next garment (stops automatic matching), `A` toggles automatic matching, `S` opens the settings page, `D` cycles overlays (skeleton → skeleton + person mask (purple) and skin (orange) → mesh → off), `Esc` or `Q` quits.
 
 The preview is mirrored; the virtual camera is not (meeting apps mirror your self-view themselves). Overlays appear only in the preview.
 
@@ -51,6 +52,12 @@ MediaPipe needs most of the torso in view. When you sit close and only your wais
 ## Matching the shirt
 
 By default the pants are picked to go with your top. The shirt color is sampled between the shoulders and hips (clothes pixels only, not hands), smoothed over a few seconds, and each garment is scored against it: light/dark contrast scores, the same hue at a similar lightness (navy on navy) is penalized, and a bright top prefers quiet pants. The pants change only when another garment wins clearly for 1.5 s. The shoulders must be visible, so when you sit too close the last choice stays.
+
+## Pants settings page
+
+While meet-pants runs, `http://127.0.0.1:8765/` (or `S` in the preview) shows a settings page: choose the style (khaki chinos, navy dress trousers, jeans), a color (the garment's own, a preset, or any color from the picker), or leave it to the shirt matching. A change shows up on screen at once and is saved to `~/.config/meet-pants/config.yaml` (`garment`, `garment_color`, `garment_auto`) as the default for next time. `python -m meet_pants --settings` opens the page without starting the camera.
+
+Recoloring keeps the fabric's shading, weave and folds. The page only listens on 127.0.0.1 and only accepts changes from itself; set `settings_port: 0` to turn it off.
 
 ## Garments
 

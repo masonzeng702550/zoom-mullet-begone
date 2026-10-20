@@ -66,6 +66,11 @@ class Config:
     garment: str = "dress_navy"
     # Pick the pants that go with the shirt color (P in the preview turns it off).
     garment_auto: bool = True
+    # "#rrggbb" to recolor the chosen garment, "" for its own color (ignored while
+    # garment_auto picks the pants).
+    garment_color: str = ""
+    # Local settings page (http://127.0.0.1:<port>, S in the preview); 0 turns it off.
+    settings_port: int = 8765
     models_dir: str = str(DEFAULT_MODELS_DIR)
     garments_dir: str = str(DEFAULT_GARMENTS_DIR)
     pose: PoseConfig = field(default_factory=PoseConfig)

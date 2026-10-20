@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>褲子設定</title>
+<style>
+  :root {
+    --bg: #f6f5f2; --card: #ffffff; --text: #1d1d1f; --muted: #6e6e73;
+    --line: #dcdad4; --accent: #2f5bea; --accent-soft: #e7edff; --danger: #c0392b;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161617; --card: #222224; --text: #f2f2f2; --muted: #9a9aa0;
+      --line: #38383c; --accent: #7c9cff; --accent-soft: #263055; --danger: #ff7b6b;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 15px/1.5 -apple-system, BlinkMacSystemFont, "PingFang TC", "Noto Sans TC", sans-serif;
+  }
+  main { max-width: 720px; margin: 0 auto; padding: 28px 16px 48px; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  .sub { color: var(--muted); margin: 0 0 24px; }
+  section { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 18px; margin-bottom: 16px; }
+  h2 { font-size: 15px; margin: 0 0 12px; }
+  .row { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+  .hint { color: var(--muted); font-size: 13px; margin: 6px 0 0; }
+  .switch { position: relative; width: 48px; height: 28px; flex: none; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .slider { position: absolute; inset: 0; background: var(--line); border-radius: 28px; cursor: pointer; transition: .2s; }
+  .slider::before { content: ""; position: absolute; width: 22px; height: 22px; left: 3px; top: 3px; background: #fff; border-radius: 50%; transition: .2s; }
+  .switch input:checked + .slider { background: var(--accent); }
+  .switch input:checked + .slider::before { transform: translateX(20px); }
+  .switch input:focus-visible + .slider { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .manual.off { opacity: .45; pointer-events: none; }
+  .styles { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 12px; }
+  .style {
+    border: 2px solid var(--line); border-radius: 12px; background: none; color: inherit;
+    padding: 10px 8px 8px; cursor: pointer; font: inherit; text-align: center;
+  }
+  .style img { width: 80px; height: 120px; object-fit: contain; display: block; margin: 0 auto 6px; }
+  .style[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
+  .swatches { display: flex; flex-wrap: wrap; gap: 10px; }
+  .swatch {
+    display: flex; flex-direction: column; align-items: center; gap: 4px; background: none; border: 0;
+    color: var(--muted); font: inherit; font-size: 12px; cursor: pointer; padding: 0; width: 52px;
+  }
+  .dot { width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--line); }
+  .swatch[aria-pressed="true"] .dot { outline: 3px solid var(--accent); outline-offset: 2px; }
+  .swatch[aria-pressed="true"] { color: var(--text); }
+  .dot.original { background: conic-gradient(#1f2a44 0 33%, #c8b48c 0 66%, #2f4f8a 0); }
+  .custom { position: relative; }
+  .custom input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 36px; }
+  .dot.picker { background: conic-gradient(red, yellow, lime, cyan, blue, magenta, red); }
+  #status { min-height: 20px; color: var(--muted); font-size: 13px; }
+  #status.error { color: var(--danger); }
+</style>
+</head>
+<body>
+<main>
+  <h1>褲子設定</h1>
+  <p class="sub">選好後畫面會立刻換上，並存成下次啟動的預設值。</p>
+
+  <section>
+    <div class="row">
+      <div>
+        <h2 style="margin:0">依上衣顏色自動搭配</h2>
+        <p class="hint">開啟時會依上衣挑選樣式，使用褲子原本的顏色。</p>
+      </div>
+      <label class="switch"><input type="checkbox" id="auto" aria-label="依上衣顏色自動搭配"><span class="slider"></span></label>
+    </div>
+  </section>
+
+  <div class="manual" id="manual">
+    <section>
+      <h2>樣式</h2>
+      <div class="styles" id="styles"></div>
+    </section>
+    <section>
+      <h2>顏色</h2>
+      <div class="swatches" id="swatches"></div>
+    </section>
+  </div>
+
+  <div id="status" role="status"></div>
+</main>
+<script>
+const $ = (id) => document.getElementById(id);
+let state = null;
+
+function thumb(id, color) {
+  return `/preview/${encodeURIComponent(id)}.png` + (color ? `?color=${encodeURIComponent(color)}` : "");
+}
+
+function swatch(name, color, extraClass) {
+  const b = document.createElement("button");
+  b.type = "button";
+  b.className = "swatch";
+  b.dataset.color = color;
+  b.innerHTML = `<span class="dot ${extraClass || ""}"></span><span></span>`;
+  if (!extraClass) b.querySelector(".dot").style.background = color;
+  b.lastChild.textContent = name;
+  b.addEventListener("click", () => send({ color }));
+  return b;
+}
+
+function render() {
+  $("auto").checked = state.auto;
+  $("manual").classList.toggle("off", state.auto);
+
+  const styles = $("styles");
+  styles.replaceChildren(...state.garments.map((g) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "style";
+    b.setAttribute("aria-pressed", String(g.id === state.garment));
+    b.innerHTML = `<img alt=""><span></span>`;
+    b.querySelector("img").src = thumb(g.id, state.color);
+    b.querySelector("span").textContent = g.name;
+    b.addEventListener("click", () => send({ garment: g.id }));
+    return b;
+  }));
+
+  const swatches = $("swatches");
+  const items = [swatch("原色", "", "original"), ...state.presets.map((p) => swatch(p.name, p.color))];
+  const custom = swatch("自訂", "custom", "picker");
+  custom.classList.add("custom");
+  const input = document.createElement("input");
+  input.type = "color";
+  input.setAttribute("aria-label", "自訂顏色");
+  input.value = state.color || "#1f2a44";
+  input.addEventListener("change", () => send({ color: input.value }));
+  custom.prepend(input);
+  items.push(custom);
+  const known = new Set(["", ...state.presets.map((p) => p.color)]);
+  for (const b of items) {
+    const isCustom = b === custom;
+    b.setAttribute("aria-pressed", String(isCustom ? !known.has(state.color) : b.dataset.color === state.color));
+  }
+  if (!known.has(state.color)) custom.querySelector(".dot").style.background = state.color;
+  swatches.replaceChildren(...items);
+}
+
+function show(message, error) {
+  $("status").textContent = message;
+  $("status").classList.toggle("error", !!error);
+}
+
+async function load() {
+  const r = await fetch("/api/settings");
+  const next = await r.json();
+  if (JSON.stringify(next) !== JSON.stringify(state)) { state = next; render(); }
+}
+
+async function send(change) {
+  try {
+    const r = await fetch("/api/settings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(change),
+    });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error || r.statusText);
+    state = data;
+    render();
+    show("已套用並儲存");
+  } catch (e) {
+    show("無法儲存：" + e.message, true);
+  }
+}
+
+$("auto").addEventListener("change", (e) => send({ auto: e.target.checked }));
+load().catch(() => show("連不上 meet-pants，請確認程式還在執行。", true));
+// Pick up changes made in the preview window (P / A keys, automatic matching).
+setInterval(() => load().catch(() => show("連不上 meet-pants，請確認程式還在執行。", true)), 2000);
+</script>
+</body>
+</html>

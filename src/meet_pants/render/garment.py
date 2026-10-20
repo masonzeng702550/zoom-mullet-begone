@@ -14,7 +14,7 @@ sides, matching LegGeometry. Each leg is mapped row by row:
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 
 import cv2
@@ -138,3 +138,40 @@ def list_garments(root: Path) -> list[str]:
     if not root.is_dir():
         return []
     return sorted(p.name for p in root.iterdir() if (p / "garment.yaml").exists())
+
+
+def parse_color(text: str) -> tuple[int, int, int]:
+    """'#rrggbb' -> BGR."""
+    value = text.strip().lstrip("#")
+    if len(value) != 6:
+        raise GarmentError(f"color must look like #rrggbb, got {text!r}")
+    try:
+        r, g, b = (int(value[i : i + 2], 16) for i in (0, 2, 4))
+    except ValueError:
+        raise GarmentError(f"color must look like #rrggbb, got {text!r}") from None
+    return b, g, r
+
+
+def recolor_texture(texture: np.ndarray, bgr: tuple[int, int, int]) -> np.ndarray:
+    """The texture in another color, keeping its shading, weave and folds.
+
+    Each pixel's brightness relative to the fabric's median brightness is kept
+    and applied to the new color, so a fold that is 20% darker stays 20% darker.
+    """
+    out = texture.copy()
+    opaque = texture[..., 3] > 0
+    if not opaque.any():
+        return out
+    luma = cv2.cvtColor(np.ascontiguousarray(texture[..., :3]), cv2.COLOR_BGR2GRAY).astype(np.float32)
+    ratio = luma / max(float(np.median(luma[texture[..., 3] > 200])), 1.0)
+    rgb = np.clip(ratio[..., None] * np.array(bgr, np.float32), 0, 255).astype(np.uint8)
+    out[..., :3] = np.where(opaque[..., None], rgb, texture[..., :3])
+    return out
+
+
+def with_color(garment: Garment, color: str | None) -> Garment:
+    """The garment recolored to '#rrggbb'; unchanged for None / ''."""
+    if not color:
+        return garment
+    texture = recolor_texture(garment.texture, parse_color(color))
+    return replace(garment, texture=texture, pyramid=build_pyramid(texture))

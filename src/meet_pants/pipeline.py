@@ -9,6 +9,7 @@ from __future__ import annotations
 import sys
 import time
 from contextlib import ExitStack
+from dataclasses import replace
 from pathlib import Path
 
 import cv2
@@ -24,11 +25,12 @@ from meet_pants.perception.chain import PoseChain
 from meet_pants.perception.segmenter import BodySegmenter, Segmentation
 from meet_pants.perception.types import PoseFrame
 from meet_pants.render.compositor import Compositor, SceneMasks
-from meet_pants.render.garment import Garment, GarmentError, list_garments, load_garment
+from meet_pants.render.garment import Garment, GarmentError, list_garments, load_garment, parse_color, with_color
 from meet_pants.render.mesh import Mesh, build_mesh
 from meet_pants.render.trim import draw_trim
 from meet_pants.render.warp_cv import render_mesh
 from meet_pants.tracking.one_euro import LandmarkSmoother
+from meet_pants.ui.settings import GarmentChoice, SettingsHub, SettingsServer, effective
 
 FADE_IN_MS = 120
 TOP_SAMPLE_EVERY = 5  # frames between shirt color samples
@@ -51,9 +53,9 @@ def _next_debug(current: DebugConfig) -> DebugConfig:
 
 
 class Wardrobe:
-    """Available garments, loaded on first use, with a current selection."""
+    """Available garments, loaded on first use, with a current selection and color."""
 
-    def __init__(self, root: Path, initial: str):
+    def __init__(self, root: Path, initial: str, color: str = ""):
         self._root = root
         self.ids = list_garments(root)
         if initial not in self.ids:
@@ -61,13 +63,30 @@ class Wardrobe:
             raise GarmentError(f"garment '{initial}' not found in {root} (available: {available})")
         self._index = self.ids.index(initial)
         self._cache: dict[str, Garment] = {}
+        self._recolored: tuple[tuple[str, str], Garment] | None = None
+        self.color = ""
+        self.set_color(color)
+
+    def _base(self, gid: str) -> Garment:
+        if gid not in self._cache:
+            self._cache[gid] = load_garment(self._root, gid)
+        return self._cache[gid]
 
     @property
     def current(self) -> Garment:
         gid = self.ids[self._index]
-        if gid not in self._cache:
-            self._cache[gid] = load_garment(self._root, gid)
-        return self._cache[gid]
+        if not self.color:
+            return self._base(gid)
+        key = (gid, self.color)
+        if self._recolored is None or self._recolored[0] != key:
+            self._recolored = (key, with_color(self._base(gid), self.color))
+        return self._recolored[1]
+
+    def set_color(self, color: str) -> None:
+        """'#rrggbb', or '' for each garment's own color."""
+        if color:
+            parse_color(color)  # raises GarmentError on a bad value
+        self.color = color
 
     def next(self) -> Garment:
         self._index = (self._index + 1) % len(self.ids)
@@ -79,12 +98,20 @@ class Wardrobe:
 
     def colors(self) -> dict[str, np.ndarray]:
         """Median Lab color of every garment (loads them all)."""
-        colors = {}
-        for gid in self.ids:
-            if gid not in self._cache:
-                self._cache[gid] = load_garment(self._root, gid)
-            colors[gid] = texture_color(self._cache[gid].texture)
-        return colors
+        return {gid: texture_color(self._base(gid).texture) for gid in self.ids}
+
+
+def apply_choice(
+    choice: GarmentChoice, wardrobe: Wardrobe, matcher: OutfitMatcher | None
+) -> tuple[bool, OutfitMatcher | None]:
+    """Put on the garment chosen on the settings page; returns (auto, matcher)."""
+    wardrobe.select(choice.garment)
+    wardrobe.set_color(effective(choice).color)
+    if choice.auto and matcher is None:
+        matcher = OutfitMatcher(wardrobe.colors(), wardrobe.current.id)
+    if matcher is not None:
+        matcher.follow(wardrobe.current.id)
+    return choice.auto, matcher
 
 
 def scene_masks(pose: PoseFrame, segmentation: Segmentation | None, geometry: LegGeometry) -> SceneMasks:
@@ -114,9 +141,13 @@ def dress(
     return compositor.composite(frame, layer, masks or SceneMasks(), geometry.scale, opacity), mesh
 
 
-def run(config: Config, max_frames: int | None = None, record: Path | None = None) -> int:
+def run(
+    config: Config, max_frames: int | None = None, record: Path | None = None, settings_path: Path | None = None
+) -> int:
+    """`settings_path`: config file the settings page saves to (None: changes are not saved)."""
+    choice = GarmentChoice(config.garment, config.garment_color, config.garment_auto)
     try:
-        wardrobe = Wardrobe(Path(config.garments_dir), config.garment)
+        wardrobe = Wardrobe(Path(config.garments_dir), config.garment, effective(choice).color)
         wardrobe.current  # fail on a broken garment before opening devices
         matcher = OutfitMatcher(wardrobe.colors(), config.garment) if config.garment_auto else None
     except (GarmentError, ValueError) as e:
@@ -158,11 +189,21 @@ def run(config: Config, max_frames: int | None = None, record: Path | None = Non
             stack.callback(recorder.release)
             print(f"record raw input -> {record}")
 
+        hub = SettingsHub(Path(config.garments_dir), choice, settings_path)
+        seen_version = hub.version
+        settings = None
+        if config.settings_port and (vcam is not None or config.preview):
+            try:
+                settings = stack.enter_context(SettingsServer(hub, config.settings_port))
+                print(f"settings page: {settings.url}")
+            except OSError as e:
+                print(f"settings page off: port {config.settings_port} unavailable ({e})", file=sys.stderr)
+
         preview = None
         if config.preview:
             preview = PreviewWindow()
             stack.callback(preview.close)
-            print("preview: Esc/Q quit, M mode, P next garment, A auto garment, D cycle debug overlays")
+            print("preview: Esc/Q quit, M mode, P next garment, A auto garment, S settings, D cycle debug overlays")
 
         mode = config.mode
         debug = config.debug
@@ -192,10 +233,15 @@ def run(config: Config, max_frames: int | None = None, record: Path | None = Non
                 pose = smoother(detector.detect(frame.image, frame.t_ms), width, height)
                 segmentation = segmenter.latest()
                 geometry = legs.update(pose, width, height, segmentation)
+                if hub.version != seen_version:  # changed on the settings page
+                    seen_version = hub.version
+                    auto, matcher = apply_choice(hub.choice, wardrobe, matcher)
                 if auto and matcher is not None and frames % TOP_SAMPLE_EVERY == 0:
                     switched = matcher.update(sample_top_color(frame.image, pose, segmentation), frame.t_ms)
                     if switched is not None:
                         wardrobe.select(switched)
+                        hub.set(GarmentChoice(switched, hub.choice.color, True), save=False)
+                        seen_version = hub.version
                         print(f"garment {switched} (matches the shirt)")
 
                 render_start = time.perf_counter()
@@ -242,11 +288,18 @@ def run(config: Config, max_frames: int | None = None, record: Path | None = Non
                     elif key == ord("p"):
                         wardrobe.next()
                         auto = False  # a hand-picked garment stays
+                        wardrobe.set_color(hub.choice.color)
                     elif key == ord("a"):
                         if matcher is None:
                             matcher = OutfitMatcher(wardrobe.colors(), wardrobe.current.id)
                         auto = not auto
                         matcher.follow(wardrobe.current.id)
+                        wardrobe.set_color(effective(replace(hub.choice, auto=auto)).color)
+                    elif key == ord("s") and settings is not None:
+                        settings.open()
+                    if key in (ord("p"), ord("a")):  # keep the page in step; not saved as the default
+                        hub.set(GarmentChoice(wardrobe.current.id, hub.choice.color, auto), save=False)
+                        seen_version = hub.version
 
                 if pace:
                     # Fixed schedule, so processing time is absorbed instead of added.
