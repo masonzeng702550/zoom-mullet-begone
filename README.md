@@ -4,6 +4,8 @@
 
 > **Your Zoom mullet, begone.** Business on top, business on the bottom. (Formerly *meet-pants*.)
 
+![Before: the Zoom mullet, a shirt and tie on top and polka-dot boxers below the camera's edge. After: the same picture with navy trousers drawn by Zoom Mullet Begone.](assets/zoom-mullet-before-after.png)
+
 **[Try it in your browser →](https://masonzeng702550.github.io/zoom-mullet-begone/)** No install: turn on your camera or upload a photo and the pants appear. Everything runs in the page; your video never leaves your computer.
 
 Virtual pants for video calls. Zoom Mullet Begone tracks your legs with a pose model, draws a pair of pants that follows them, and sends the result to a virtual camera that Google Meet, Zoom, Teams and other apps can select.
@@ -234,7 +236,7 @@ node tests/js/mjpeg.test.js   # browser extension
 
 The online demo lives in `site/` (`index.html` is the meeting room, `pants-engine.js` the in-browser pipeline, `garments/` the exported pants) and has no build step. Preview it with `python -m http.server -d site 8000` and open `http://localhost:8000/`. Every push to `main` that changes `site/` deploys it to GitHub Pages (`.github/workflows/pages.yml`).
 
-Tests that need the models or the private test footage in `data/` are skipped when those files are missing. Videos recorded with `--record` stay in `data/`, which is not committed.
+Tests that need the models or the private test footage in `data/` are skipped when those files are missing. Videos recorded with `--record` stay in `data/`, which is not committed. The before/after picture at the top is drawn by `scripts/make_readme_image.py` (the right half comes from the real renderer; it uses macOS's Impact font).
 
 ## License
 

@@ -4,6 +4,8 @@
 
 > **Zoom マレット、退散！** 上も下もきちんとビジネス。（旧名 *meet-pants*）
 
+![使用前：Zoom マレット。上はシャツとネクタイ、カメラに映らない下は水玉のトランクス。使用後：同じ画像に Zoom Mullet Begone がネイビーのスラックスを描いたもの。](assets/zoom-mullet-before-after.png)
+
 **[ブラウザーですぐ試す →](https://masonzeng702550.github.io/zoom-mullet-begone/)** インストール不要：カメラをオンにするか写真をアップロードすると、パンツが表示されます。処理はすべてページ内で行われ、映像はこのコンピューターの外に出ません。
 
 ビデオ会議用のバーチャルパンツです。Zoom Mullet Begone は姿勢推定モデルで脚を追跡し、脚の動きに合わせてパンツを描画して、その映像を仮想カメラに送ります。Google Meet、Zoom、Teams などのアプリで、このカメラを選んで使えます。
@@ -236,7 +238,7 @@ node tests/js/mjpeg.test.js   # browser extension
 
 オンラインデモは `site/` にあります（`index.html` が会議室、`pants-engine.js` がブラウザー内の処理、`garments/` が書き出したパンツ）。ビルドは不要です。`python -m http.server -d site 8000` で起動し、`http://localhost:8000/` を開くとプレビューできます。`site/` を変更して `main` に push すると、GitHub Pages に自動でデプロイされます（`.github/workflows/pages.yml`）。
 
-モデルや `data/` 内の非公開テスト映像が必要なテストは、ファイルがなければスキップされます。`--record` で録画した映像は `data/` に保存され、このフォルダーはコミットされません。
+モデルや `data/` 内の非公開テスト映像が必要なテストは、ファイルがなければスキップされます。`--record` で録画した映像は `data/` に保存され、このフォルダーはコミットされません。冒頭のビフォー／アフター画像は `scripts/make_readme_image.py` で描いています（右半分は実際のレンダラーの出力で、macOS の Impact フォントを使います）。
 
 ## ライセンス
 

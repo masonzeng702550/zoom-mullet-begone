@@ -4,6 +4,8 @@
 
 > **Zoom mullet，退散！** 上半身正式，下半身也正式。（舊名 *meet-pants*。）
 
+![使用前：Zoom mullet，上半身襯衫領帶，鏡頭拍不到的下半身只穿圓點四角褲。使用後：同一張圖由 Zoom Mullet Begone 畫上深藍西裝褲。](assets/zoom-mullet-before-after.png)
+
 **[直接在瀏覽器試用 →](https://masonzeng702550.github.io/zoom-mullet-begone/)** 不用安裝：開啟鏡頭或上傳照片就會出現褲子。所有處理都在網頁裡進行，畫面不會離開你的電腦。
 
 視訊會議用的虛擬褲子。Zoom Mullet Begone 用姿勢模型追蹤你的腿，畫上一條跟著腿動的褲子，再把畫面送到虛擬鏡頭，讓 Google Meet、Zoom、Teams 等軟體選用。
@@ -234,7 +236,7 @@ node tests/js/mjpeg.test.js   # browser extension
 
 線上展示放在 `site/`（`index.html` 是會議室，`pants-engine.js` 是在瀏覽器裡執行的處理流程，`garments/` 是匯出的褲子），不需要建置步驟。用 `python -m http.server -d site 8000` 啟動後打開 `http://localhost:8000/` 即可預覽。只要推到 `main` 的修改有動到 `site/`，就會自動部署到 GitHub Pages（`.github/workflows/pages.yml`）。
 
-需要模型或 `data/` 中私人測試影片的測試，在檔案不存在時會自動略過。用 `--record` 錄下的影片會存在 `data/`，這個資料夾不會被 commit。
+需要模型或 `data/` 中私人測試影片的測試，在檔案不存在時會自動略過。用 `--record` 錄下的影片會存在 `data/`，這個資料夾不會被 commit。最上方的前後對比圖由 `scripts/make_readme_image.py` 產生（右半邊是真正的渲染程式畫的；使用 macOS 內建的 Impact 字型）。
 
 ## 授權
 

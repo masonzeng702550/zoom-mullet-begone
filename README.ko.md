@@ -4,6 +4,8 @@
 
 > **Zoom 멀릿, 물러가라!** 위도 비즈니스, 아래도 비즈니스. (예전 이름 *meet-pants*)
 
+![사용 전: Zoom 멀릿. 위는 셔츠와 넥타이, 카메라에 안 잡히는 아래는 물방울무늬 사각팬티. 사용 후: 같은 그림에 Zoom Mullet Begone이 네이비 정장 바지를 그린 모습.](assets/zoom-mullet-before-after.png)
+
 **[브라우저에서 바로 써 보기 →](https://masonzeng702550.github.io/zoom-mullet-begone/)** 설치 필요 없음: 카메라를 켜거나 사진을 올리면 바지가 나타납니다. 모든 처리는 페이지 안에서 이루어지며, 영상은 이 컴퓨터 밖으로 나가지 않습니다.
 
 화상 회의용 가상 바지입니다. Zoom Mullet Begone은 자세 추정 모델로 다리를 추적해 다리 움직임을 따라가는 바지를 그리고, 그 영상을 가상 카메라로 보냅니다. Google Meet, Zoom, Teams 같은 앱에서 이 카메라를 선택해 사용할 수 있습니다.
@@ -236,7 +238,7 @@ node tests/js/mjpeg.test.js   # browser extension
 
 온라인 데모는 `site/`에 있습니다(`index.html`은 회의실, `pants-engine.js`는 브라우저 안에서 도는 처리 과정, `garments/`는 내보낸 바지). 빌드 단계는 없습니다. `python -m http.server -d site 8000`으로 띄운 뒤 `http://localhost:8000/`을 열면 미리 볼 수 있습니다. `site/`를 바꾼 커밋을 `main`에 push하면 GitHub Pages에 자동으로 배포됩니다(`.github/workflows/pages.yml`).
 
-모델이나 `data/`의 비공개 테스트 영상이 필요한 테스트는 파일이 없으면 건너뜁니다. `--record`로 녹화한 영상은 `data/`에 저장되며, 이 폴더는 커밋되지 않습니다.
+모델이나 `data/`의 비공개 테스트 영상이 필요한 테스트는 파일이 없으면 건너뜁니다. `--record`로 녹화한 영상은 `data/`에 저장되며, 이 폴더는 커밋되지 않습니다. 맨 위의 사용 전/후 그림은 `scripts/make_readme_image.py`로 그립니다(오른쪽 절반은 실제 렌더러의 결과이며, macOS의 Impact 글꼴을 씁니다).
 
 ## 라이선스
 
