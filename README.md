@@ -42,7 +42,7 @@ Three garments are included: navy dress trousers, khaki chinos and indigo jeans.
 ```bash
 uv venv --python 3.11
 uv pip install -e ".[dev]"
-python scripts/download_models.py
+.venv/bin/python scripts/download_models.py
 ```
 
 `download_models.py` puts the pose, segmentation and fallback models (about 75 MB) into `models/`.
@@ -77,7 +77,7 @@ A practice meeting room where anyone can try the pants without installing anythi
 2. Step back so your waist and legs are in view; the status chip at the top says *Pants on*.
 3. Pick a style and a color at the top of your video, and hold **Hold to compare** to see the original.
 
-Everything runs in the page: MediaPipe's pose model (WebAssembly, on the graphics card when available) finds your legs, and WebGL draws the pants. Your video is never uploaded. The first visit downloads about 15 MB (the model and its runtime). It works in current Chrome, Edge, Safari and Firefox with WebGL2.
+Everything runs in the page: MediaPipe's pose model (WebAssembly, on the graphics card when available) finds your legs, and WebGL draws the pants. Your video is never uploaded. The first visit downloads about 15 MB (the model and its runtime). It needs WebGL2; it is tested in Chrome and should also work in current Edge, Safari and Firefox.
 
 The demo is a slimmed-down port of the desktop app: it leaves out the close-up fallback model, the skin/clothes segmenter, forearms in front of the pants and the seam lines. For real meetings, use the desktop app with the browser extension or a virtual camera.
 
@@ -145,7 +145,7 @@ While Zoom Mullet Begone runs, open `http://127.0.0.1:8765/`, press `S` in the p
 - turn shirt matching on or off;
 - see a live view of what the meeting receives (background mode).
 
-Changes show up on screen immediately and are saved as the default for next time. `python -m zoom_mullet_begone --settings` opens the page without starting the camera.
+Changes show up on screen immediately and are saved as the default for next time. `.venv/bin/python -m zoom_mullet_begone --settings` opens the page without starting the camera.
 
 The settings page and the menu bar are in Traditional Chinese for now. The page listens only on 127.0.0.1 and accepts changes only from itself, so other websites cannot change your settings. Set `settings_port: 0` in the config file to turn it off.
 

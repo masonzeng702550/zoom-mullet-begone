@@ -16,7 +16,7 @@ async function refresh() {
   } catch (e) {
     $("state").textContent = "找不到 Zoom Mullet Begone";
     $("state").className = "bad";
-    $("detail").textContent = "請先在電腦上啟動 Zoom Mullet Begone（例如 python -m zoom_mullet_begone --background）。";
+    $("detail").textContent = "請先在電腦上啟動 Zoom Mullet Begone（在專案資料夾執行 .venv/bin/python -m zoom_mullet_begone --background）。";
   }
 }
 

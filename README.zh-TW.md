@@ -42,7 +42,7 @@
 ```bash
 uv venv --python 3.11
 uv pip install -e ".[dev]"
-python scripts/download_models.py
+.venv/bin/python scripts/download_models.py
 ```
 
 `download_models.py` 會把姿勢、分割和備援模型（約 75 MB）下載到 `models/`。
@@ -77,7 +77,7 @@ macOS 第一次執行時，系統會詢問是否允許終端機使用鏡頭。
 2. 往後退，讓腰和腿都在畫面裡；上方的狀態標籤會顯示「已套上褲子」。
 3. 在畫面上方選擇樣式和顏色，按住「**按住看原圖**」可以比較原本的樣子。
 
-所有處理都在網頁裡進行：MediaPipe 的姿勢模型（WebAssembly，有顯示卡時會用顯示卡）找出你的腿，再用 WebGL 畫上褲子。畫面不會上傳。第一次開啟會下載約 15 MB（模型和執行環境）。支援 WebGL2 的新版 Chrome、Edge、Safari 和 Firefox 都能使用。
+所有處理都在網頁裡進行：MediaPipe 的姿勢模型（WebAssembly，有顯示卡時會用顯示卡）找出你的腿，再用 WebGL 畫上褲子。畫面不會上傳。第一次開啟會下載約 15 MB（模型和執行環境）。需要支援 WebGL2 的瀏覽器；已在 Chrome 測試，新版 Edge、Safari 和 Firefox 應該也能使用。
 
 線上展示是桌面程式的精簡移植版，沒有近距離備援模型、皮膚／衣服分割、前臂擋在褲子前面，以及縫線細節。要在真正的會議中使用，請搭配桌面程式和瀏覽器擴充功能或虛擬鏡頭。
 
@@ -145,7 +145,7 @@ Zoom Mullet Begone 執行時，打開 `http://127.0.0.1:8765/`、在預覽視窗
 - 開啟或關閉依上衣搭配；
 - 查看會議收到的即時畫面（背景模式）。
 
-修改會立刻顯示在畫面上，並存成下次啟動的預設值。`python -m zoom_mullet_begone --settings` 可以在不開鏡頭的情況下只打開設定頁。
+修改會立刻顯示在畫面上，並存成下次啟動的預設值。`.venv/bin/python -m zoom_mullet_begone --settings` 可以在不開鏡頭的情況下只打開設定頁。
 
 設定頁只在 127.0.0.1 上監聽，也只接受來自頁面本身的修改，其他網站無法更改你的設定。在設定檔中設定 `settings_port: 0` 可以關閉它。
 
