@@ -236,6 +236,10 @@ The online demo lives in `site/` (`index.html` is the meeting room, `pants-engin
 
 Tests that need the models or the private test footage in `data/` are skipped when those files are missing. Videos recorded with `--record` stay in `data/`, which is not committed.
 
+## License
+
+Zoom Mullet Begone is released under the [MIT License](LICENSE). The models it downloads keep their own licenses (below).
+
 ## Third-party models
 
 | Model | Source | License |

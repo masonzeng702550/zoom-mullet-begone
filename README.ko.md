@@ -238,6 +238,10 @@ node tests/js/mjpeg.test.js   # browser extension
 
 모델이나 `data/`의 비공개 테스트 영상이 필요한 테스트는 파일이 없으면 건너뜁니다. `--record`로 녹화한 영상은 `data/`에 저장되며, 이 폴더는 커밋되지 않습니다.
 
+## 라이선스
+
+Zoom Mullet Begone은 [MIT 라이선스](LICENSE)로 공개합니다. 내려받는 모델에는 각각 원래의 라이선스가 적용됩니다(아래 참고).
+
 ## 서드파티 모델
 
 | 모델 | 출처 | 라이선스 |

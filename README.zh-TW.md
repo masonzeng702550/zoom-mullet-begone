@@ -236,6 +236,10 @@ node tests/js/mjpeg.test.js   # browser extension
 
 需要模型或 `data/` 中私人測試影片的測試，在檔案不存在時會自動略過。用 `--record` 錄下的影片會存在 `data/`，這個資料夾不會被 commit。
 
+## 授權
+
+Zoom Mullet Begone 以 [MIT 授權條款](LICENSE)釋出。下載的模型各自沿用原本的授權（見下方）。
+
 ## 第三方模型
 
 | 模型 | 來源 | 授權 |
